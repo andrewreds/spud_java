@@ -9,12 +9,12 @@ function State ( processor ) {
 	this.registers = [];
 	
 	// because you can't assign past the end of arrays in java
-	int i;
+	var i;
 	for ( i = 0; i != processor.numMemoryAddresses; i++ ) {
-		this.memory[] = 0;
+		this.memory[i] = 0;
 	}
 	for ( i = 0; i != processor.getNumRegisters(); i++ ) {
-		this.registers[] = 0;
+		this.registers[i] = 0;
 	}
 	
 	this.reset();
@@ -37,11 +37,11 @@ State.prototype.duplicate = function ( ) {
 
 State.prototype.reset = function ( ) {
 	var i;
-	for ( i = 0; i != processor.numMemoryAddresses; i++ ) {
+	for ( i = 0; i != this.processor.numMemoryAddresses; i++ ) {
 		this.memory[i] = 0;
 	}
 	
-	for ( i = 0; i != processor.getNumRegisters(); i++ ) {
+	for ( i = 0; i != this.processor.getNumRegisters(); i++ ) {
 		this.registers[i] = 0;
 	}
 	
@@ -49,7 +49,7 @@ State.prototype.reset = function ( ) {
 	this.output = "";
 	this.numBellRings = 0;
 	this.pipelineStep = 0;
-	executionStep = 0;
+	this.executionStep = 0;
 }
 
 // ensure a value is within the allowed values of this processor
@@ -72,7 +72,7 @@ State.prototype.constrainAddress = function ( value ) {
 
 State.prototype.getRegister = function ( registerName ) {
 	var registerIndex = this.processor.registerIndexLookup[registerName];
-	return this.constrainRegister( this.registers.[registerIndex] );
+	return this.constrainRegister( this.registers[registerIndex] );
 }
 
 State.prototype.setRegister = function ( registerName, value ) {
@@ -85,7 +85,7 @@ State.prototype.getMemory = function ( address ) {
 	return this.constrainMemory( this.memory[ address ] );
 }
 
-State.prototype.setMemory( address, value ) {
+State.prototype.setMemory = function( address, value ) {
 	address = this.constrainAddress( address );
 	memory[ address] = this.constrainMemory( value );
 }
@@ -94,7 +94,7 @@ State.prototype.getAllMemory = function ( ) {
 	return this.memory.slice (0);
 }
 
-State.prototype.setAllMemory( values ) {
+State.prototype.setAllMemory = function( values ) {
 	var i;
 	for ( i = 0; i != this.processor.numMemoryAddresses; i++ ) {
 		if ( i < values.length ) {
@@ -122,7 +122,7 @@ State.prototype.setAllRegisters = function ( values ) {
 // Side-Effects
 
 
-State.prototype.print( value ) {
+State.prototype.print = function( value ) {
 	this.output += String (value);
 	//System.out.println(Integer.toString( value ));
 }
@@ -150,13 +150,13 @@ State.prototype.toJSON = function ( ) {
 	sb += "    \"registers\": {\n";
 	var first = true;
 	for (var regid in this.registerNames) {
-		if (!first) sb. += ",";
+		if (!first) sb += ",";
 		first = false;
 		var current = this.registerNames[ regid ];
 		sb += "        \"";
 		sb += current;
 		sb += "\": ";
-		sb += this.registers[ this.processor.registerIndexLookup[ current ];
+		sb += this.registers[ this.processor.registerIndexLookup[ current ]];
 
 		sb += "\n";
 	}

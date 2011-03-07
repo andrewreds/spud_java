@@ -10,7 +10,7 @@ function FetchIncExecProcessor ( ) {
 		}
 	};
 	
-	this.pipeline[] = this.fetch;
+	this.pipeline[0] = this.fetch;
 	
 	
 	this.increment = { "run" : function (state) {
@@ -18,7 +18,7 @@ function FetchIncExecProcessor ( ) {
 		}
 	};
 	
-	this.pipeline[] = increment;
+	this.pipeline[1] = this.increment;
 	
 	
 	this.execute = { "run" : function (state) {
@@ -26,20 +26,20 @@ function FetchIncExecProcessor ( ) {
 		}
 	};
 	
-	this.pipeline[] = execute;
+	this.pipeline[2] = this.execute;
 }
 
 //inhertance
 FetchIncExecProcessor.prototype = new Processor;
 
-FetchIncExecProcessor.prototype.fetch( state ) {
+FetchIncExecProcessor.prototype.fetch = function( state ) {
 	// The instruction at the address given by IP is loaded into IS
 	var ip = state.getRegister( "IP" );
 	var instruction = state.getMemory( ip );
 	state.setRegister( "IS", instruction );
 }
 
-FetchIncExecProcessor.prototype.increment( state ) {
+FetchIncExecProcessor.prototype.increment = function( state ) {
 	var ip = state.getRegister( "IP" );
 	var instructionNum = state.getRegister( "IS" );
 	
@@ -59,7 +59,7 @@ FetchIncExecProcessor.prototype.increment( state ) {
 	state.setRegister( "IP", ip + ipIncrement );
 }
 
-FetchIncExecProcessor.prototype.execute( state ) {
+FetchIncExecProcessor.prototype.execute = function( state ) {
 	
 	var instructionNum = state.getRegister( "IS" );
 

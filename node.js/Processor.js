@@ -4,7 +4,7 @@ function Processor () {
 }
 
 Processor.prototype.getNumRegisters = function ( ) {
-	return this.registerNames.size();
+	return this.registerNames.length;
 }
 
 Processor.prototype.setRegisterNames = function ( names ) {
@@ -16,13 +16,13 @@ Processor.prototype.setRegisterNames = function ( names ) {
 	var hasIP = false;
 	var hasIS = false;
 
-	for ( i = 0; i != names.size(); i++ ) {
-		String name = names.get(i);
-		registerIndexLookup[name] = i;
+	for ( i = 0; i != names.length; i++ ) {
+		var name = names[i];
+		this.registerIndexLookup[name] = i;
 		
-		if ( name.equals( "IP" ) ) {
+		if ( name == "IP" ) {
 			hasIP = true;
-		} else if ( name.equals( "IS" ) ) {
+		} else if ( name == "IS" ) {
 			hasIS = true;
 		}
 		
@@ -49,7 +49,6 @@ Processor.prototype.getJSON = function ( ) {
 	sb = sb + numMemoryAddresses;
 	sb = sb + ",\n";
 	
-	Iterator<String> registerIterator = registerNames.iterator( );
 	sb = sb + "    \"registers\": [" ;
 	var first = true;
 	for ( var registerName in this.registerNames ) {
@@ -57,7 +56,7 @@ Processor.prototype.getJSON = function ( ) {
 		first = false;
 		
 		sb = sb + "\"";
-		sb = sb + this.registerNames[registerName] );
+		sb = sb + this.registerNames[registerName];
 		sb = sb + "\"";
 	}
 	sb = sb + "],\n";

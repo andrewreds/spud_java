@@ -1,4 +1,4 @@
-function Processer4917 () {
+function Processor4917 () {
 	//super()
 	this.__proto__.__proto__.constructor();
 
@@ -30,7 +30,7 @@ function Processer4917 () {
 	
 }
 
-Processer4917.prototype = new FetchIncExecProcessor;
+Processor4917.prototype = new FetchIncExecProcessor;
 
 // Instruction Definitions for 4917
 
@@ -39,39 +39,39 @@ function InstructionHalt( state ) {
 }
 
 function InstructionAdd( state ) {
-	int r0 = state.getRegister( "R0" );
-	int r1 = state.getRegister( "R1" );
+	var r0 = state.getRegister( "R0" );
+	var r1 = state.getRegister( "R1" );
 	
 	state.setRegister( "R0", r0+r1 );
 }
 
 function InstructionSubtract( state ) {
-	int r0 = state.getRegister( "R0" );
-	int r1 = state.getRegister( "R1" );
+	var r0 = state.getRegister( "R0" );
+	var r1 = state.getRegister( "R1" );
 	
 	state.setRegister( "R0", r0-r1 );
 }
 
 function InstructionIncrementR0( state ) {
-	int r0 = state.getRegister( "R0" );
+	var r0 = state.getRegister( "R0" );
 
 	state.setRegister( "R0", r0+1 );
 }
 
 function InstructionIncrementR1( state ) {
-	int r1 = state.getRegister( "R1" );
+	var r1 = state.getRegister( "R1" );
 
 	state.setRegister( "R1", r1+1 );
 }
 
 function InstructionDecrementR0( state ) {
-	int r0 = state.getRegister( "R0" );
+	var r0 = state.getRegister( "R0" );
 
 	state.setRegister( "R0", r0-1 );
 }
 
 function InstructionDecrementR1( state ) {
-	int r1 = state.getRegister( "R1" );
+	var r1 = state.getRegister( "R1" );
 
 	state.setRegister( "R1", r1-1 );
 }
@@ -81,50 +81,50 @@ function InstructionRingBell( state ) {
 }
 
 function InstructionPrint( state ) {
-	int ip = state.getRegister( "IP" );
-	int data = state.getMemory( ip-1 );
+	var ip = state.getRegister( "IP" );
+	var data = state.getMemory( ip-1 );
 	state.print( data );
 }
 
 function InstructionLoadR0( state ) {
-	int ip = state.getRegister( "IP" );
-	int address = state.getMemory( ip-1 );
+	var ip = state.getRegister( "IP" );
+	var address = state.getMemory( ip-1 );
 	
 	state.setRegister( "R0", state.getMemory( address ) );
 }
 
 function InstructionLoadR1( state ) {
-	int ip = state.getRegister( "IP" );
-	int address = state.getMemory( ip-1 );
+	var ip = state.getRegister( "IP" );
+	var address = state.getMemory( ip-1 );
 	
 	state.setRegister( "R1", state.getMemory( address ) );
 }
 
 function InstructionStoreR0( state ) {
-	int ip = state.getRegister( "IP" );
-	int address = state.getMemory( ip-1 );
+	var ip = state.getRegister( "IP" );
+	var address = state.getMemory( ip-1 );
 	
 	state.setMemory( address, state.getRegister( "R0" ) );
 }
 
 function InstructionStoreR1( state ) {
-	int ip = state.getRegister( "IP" );
-	int address = state.getMemory( ip-1 );
+	var ip = state.getRegister( "IP" );
+	var address = state.getMemory( ip-1 );
 	
 	state.setMemory( address, state.getRegister( "R1" ) );
 }
 
 function InstructionJump( state ) {
-	int ip = state.getRegister( "IP" );
-	int address = state.getMemory( ip-1 );            
+	var ip = state.getRegister( "IP" );
+	var address = state.getMemory( ip-1 );            
 	
 	state.setRegister( "IP", address );
 }        
 
 function InstructionJumpIfR0is0( state ) {
 	if ( state.getRegister( "R0" ) == 0 ) {
-		int ip = state.getRegister( "IP" );
-		int address = state.getMemory( ip-1 );            
+		var ip = state.getRegister( "IP" );
+		var address = state.getMemory( ip-1 );            
 	
 		state.setRegister( "IP", address );
 	}
@@ -132,8 +132,8 @@ function InstructionJumpIfR0is0( state ) {
 
 function InstructionJumpIfR0not0( state ) {
 	if ( state.getRegister( "R0" ) != 0 ) {
-		int ip = state.getRegister( "IP" );
-		int address = state.getMemory( ip-1 );            
+		var ip = state.getRegister( "IP" );
+		var address = state.getMemory( ip-1 );            
 	
 		state.setRegister( "IP", address );
 	}

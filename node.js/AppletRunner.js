@@ -1,6 +1,6 @@
 function AppletRunner ( ) {
 	this.processor = new Processor4917 ( );
-	this.state = new State ( processor );
+	this.state = new State ( this.processor );
 	this.emulator = new Emulator ( );
 }
 
@@ -11,7 +11,7 @@ AppletRunner.prototype.step = function( ) {
 }
 
 AppletRunner.prototype.clearState = function( ){
-	this.state = new State(processor);
+	this.state = new State(this.processor);
 	return this.getState( );
 }
 
