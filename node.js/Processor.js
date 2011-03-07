@@ -18,7 +18,7 @@ Processor.prototype.setRegisterNames = function ( names ) {
 
 	for ( i = 0; i != names.size(); i++ ) {
 		String name = names.get(i);
-		registerIndexLookup.put(name, i);
+		registerIndexLookup[name] = i;
 		
 		if ( name.equals( "IP" ) ) {
 			hasIP = true;
@@ -57,7 +57,7 @@ Processor.prototype.getJSON = function ( ) {
 		first = false;
 		
 		sb = sb + "\"";
-		sb = sb + registerName );
+		sb = sb + this.registerNames[registerName] );
 		sb = sb + "\"";
 	}
 	sb = sb + "],\n";

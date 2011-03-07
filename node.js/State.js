@@ -1,4 +1,210 @@
-package emulator;
+function State ( processor ) {
+	this.processor = processor;
+
+	this.isHalted = false;
+	this.output = '';
+	this.numBellRings = 0;
+
+	this.memory = [];
+	this.registers = [];
+	
+	// because you can't assign past the end of arrays in java
+	int i;
+	for ( i = 0; i != processor.numMemoryAddresses; i++ ) {
+		this.memory[] = 0;
+	}
+	for ( i = 0; i != processor.getNumRegisters(); i++ ) {
+		this.registers[] = 0;
+	}
+	
+	this.reset();
+}
+
+State.prototype.duplicate = function ( ) {
+	var newState = new State( this.processor );
+	newState.setAllMemory( this.memory );
+	newState.setAllRegisters( this.registers );
+	
+	newState.isHalted = this.isHalted;
+	newState.output = this.output;
+	newState.numBellRings = this.numBellRings;
+	
+	newState.pipelineStep = this.pipelineStep;
+	newState.executionStep = this.executionStep;
+	
+	return newState;
+}
+
+State.prototype.reset = function ( ) {
+	var i;
+	for ( i = 0; i != processor.numMemoryAddresses; i++ ) {
+		this.memory[i] = 0;
+	}
+	
+	for ( i = 0; i != processor.getNumRegisters(); i++ ) {
+		this.registers[i] = 0;
+	}
+	
+	this.isHalted = false;
+	this.output = "";
+	this.numBellRings = 0;
+	this.pipelineStep = 0;
+	executionStep = 0;
+}
+
+// ensure a value is within the allowed values of this processor
+State.prototype.constrainRegister = function ( value ) {
+	var mask = (1 << this.processor.registerBitSize)-1;
+	return (value & mask);
+}
+State.prototype.constrainMemory = function ( value ) {
+	var mask = (1 << this.processor.memoryBitSize)-1;
+	return (value & mask);
+}
+State.prototype.constrainAddress = function ( value ) {
+	var newValue = value % this.processor.numMemoryAddresses;
+	// wrap around negative addresses
+	if ( newValue < 0 ) {
+		newValue += this.processor.numMemoryAddresses; 
+	}
+	return newValue;
+}
+
+State.prototype.getRegister = function ( registerName ) {
+	var registerIndex = this.processor.registerIndexLookup[registerName];
+	return this.constrainRegister( this.registers.[registerIndex] );
+}
+
+State.prototype.setRegister = function ( registerName, value ) {
+	var registerIndex = this.processor.registerIndexLookup[ registerName ];
+	this.registers[registerIndex] = this.constrainRegister( value );
+}
+
+State.prototype.getMemory = function ( address ) {
+	address = this.constrainAddress( address );
+	return this.constrainMemory( this.memory[ address ] );
+}
+
+State.prototype.setMemory( address, value ) {
+	address = this.constrainAddress( address );
+	memory[ address] = this.constrainMemory( value );
+}
+
+State.prototype.getAllMemory = function ( ) {
+	return this.memory.slice (0);
+}
+
+State.prototype.setAllMemory( values ) {
+	var i;
+	for ( i = 0; i != this.processor.numMemoryAddresses; i++ ) {
+		if ( i < values.length ) {
+			memory[ i ] = this.constrainMemory( values[ i ] );
+		} else {
+			// set rest of memory to 0
+			memory[ i ] = 0;
+		}
+	}
+}
+
+State.prototype.setAllRegisters = function ( values ) {
+	var i;
+	for ( i = 0; i != this.processor.getNumRegisters(); i++ ) {
+		if ( i < values.lenght ) {
+			registers[ i ] = this.constrainRegister( values[ i ] );
+		} else {
+			// set any unspecified registers to 0
+			registers[ i ] = 0;
+		}
+	}
+}
+
+
+// Side-Effects
+
+
+State.prototype.print( value ) {
+	this.output += String (value);
+	//System.out.println(Integer.toString( value ));
+}
+ 
+State.prototype.printASCII = function ( value ) {
+	this.output += String.fromCharCode( value );
+	//System.out.println( (char) value );
+}
+ 
+State.prototype.ringBell = function ( ) {
+	//System.out.print("**DING**");
+	this.numBellRings++;
+}
+ 
+State.prototype.halt = function ( ) {
+	this.isHalted = true;
+}
+
+State.prototype.toJSON = function ( ) {
+	var sb = '';
+	
+	sb += "{\n";
+	
+	// registers
+	sb += "    \"registers\": {\n";
+	var first = true;
+	for (var regid in this.registerNames) {
+		if (!first) sb. += ",";
+		first = false;
+		var current = this.registerNames[ regid ];
+		sb += "        \"";
+		sb += current;
+		sb += "\": ";
+		sb += this.registers[ this.processor.registerIndexLookup[ current ];
+
+		sb += "\n";
+	}
+	sb += "    },\n";
+	
+	// memory
+	sb += "    \"memory\": [";
+	first = true;
+	for (memid in this.memory)  {
+		if (!first) sb += ", ";
+		first = false;
+		var current = this.memory[ memid ];
+		sb += String(current);
+	}
+	sb += "],\n";
+	
+	// isHalted
+	sb += "    \"isHalted\": ";
+	sb += String(this.isHalted);
+	sb += ",\n";
+	
+	// pipeline step
+	sb += "    \"pipelineStep\": ";
+	sb += String (this.pipelineStep);
+	sb += ",\n";
+
+	// output
+	sb += "    \"output\": \"";
+	sb += this.output;
+	sb += "\",\n";
+
+	// bell rings
+	sb += "    \"numBellRings\": ";
+	sb += String (this.numBellRings);
+	sb += ",\n";
+	
+	// execution steps
+	sb += "    \"cycles\": ";
+	sb += String (this.executionStep);
+	sb += "\n";
+	
+	sb += "}";
+	
+	return sb;
+}
+
+
+/*package emulator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -132,9 +338,9 @@ public class State {
         }
     }
     
-    /*
-     * Side-Effects
-     */
+    
+    // Side-Effects
+    
     
     public void print( int value ) {
         output += Integer.toString( value );
@@ -222,3 +428,4 @@ public class State {
     	return sb.toString();
     }
 }
+*/

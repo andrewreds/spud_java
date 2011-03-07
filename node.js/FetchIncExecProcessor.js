@@ -1,4 +1,6 @@
 function FetchIncExecProcessor ( ) {
+	//super()
+	this.__proto__.__proto__.constructor();
 
 	this.pipeline = new Array ( );
 	
