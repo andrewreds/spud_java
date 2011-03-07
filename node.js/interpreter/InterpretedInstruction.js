@@ -1,4 +1,4 @@
-package emulator.interpreter;
+/*package emulator.interpreter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -162,3 +162,4 @@ public class InterpretedInstruction extends Instruction {
     }
     
 }
+*/

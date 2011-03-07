@@ -1,4 +1,145 @@
-package emulator.builtin;
+function Processer4917 () {
+	//super()
+	this.__proto__.__proto__.constructor();
+
+	this.name = "4917";
+	this.memoryBitSize = 4;
+	this.numMemoryAddresses = 16;
+	this.registerBitSize = 4;
+	
+	this.setRegisterNames( ["IP", "IS", "R0", "R1"] );
+	
+	this.instructions = [
+		new BuiltinInstruction( "Halt",                       1, InstructionHalt ),
+		new BuiltinInstruction( "Add (R0 = R0 + R1)",         1, InstructionAdd ),
+		new BuiltinInstruction( "Subtract (R0 = R0 - R1)",    1, InstructionSubtract ),
+		new BuiltinInstruction( "Increment R0 (R0 = R0 + 1)", 1, InstructionIncrementR0 ),
+		new BuiltinInstruction( "Increment R1 (R1 = R1 + 1)", 1, InstructionIncrementR1 ),
+		new BuiltinInstruction( "Decrement R0 (R0 = R0 - 1)", 1, InstructionDecrementR0 ),
+		new BuiltinInstruction( "Decrement R1 (R1 = R1 - 1)", 1, InstructionDecrementR1 ),
+		new BuiltinInstruction( "Ring Bell",                  1, InstructionRingBell ),
+		
+		new BuiltinInstruction( "Print <data> (numerical value is printed)", 2, InstructionPrint ),
+		new BuiltinInstruction( "Load value at address <data> into R0",      2, InstructionLoadR0 ),
+		new BuiltinInstruction( "Load value at address <data> into R1",      2, InstructionLoadR1 ),
+		new BuiltinInstruction( "Store R0 into address <data>",              2, InstructionStoreR0 ),
+		new BuiltinInstruction( "Store R1 into address <data>",              2, InstructionStoreR1 ),
+		new BuiltinInstruction( "Jump to address <data>",                    2, InstructionJump ),
+		new BuiltinInstruction( "Jump to address <data> if R0 == 0",         2, InstructionJumpIfR0is0 ),
+		new BuiltinInstruction( "Jump to address <data> if R0 != 0",         2, InstructionJumpIfR0not0 )];
+	
+}
+
+Processer4917.prototype = new FetchIncExecProcessor;
+
+// Instruction Definitions for 4917
+
+function InstructionHalt( state ) {
+	state.halt();
+}
+
+function InstructionAdd( state ) {
+	int r0 = state.getRegister( "R0" );
+	int r1 = state.getRegister( "R1" );
+	
+	state.setRegister( "R0", r0+r1 );
+}
+
+function InstructionSubtract( state ) {
+	int r0 = state.getRegister( "R0" );
+	int r1 = state.getRegister( "R1" );
+	
+	state.setRegister( "R0", r0-r1 );
+}
+
+function InstructionIncrementR0( state ) {
+	int r0 = state.getRegister( "R0" );
+
+	state.setRegister( "R0", r0+1 );
+}
+
+function InstructionIncrementR1( state ) {
+	int r1 = state.getRegister( "R1" );
+
+	state.setRegister( "R1", r1+1 );
+}
+
+function InstructionDecrementR0( state ) {
+	int r0 = state.getRegister( "R0" );
+
+	state.setRegister( "R0", r0-1 );
+}
+
+function InstructionDecrementR1( state ) {
+	int r1 = state.getRegister( "R1" );
+
+	state.setRegister( "R1", r1-1 );
+}
+
+function InstructionRingBell( state ) {
+	state.ringBell( );
+}
+
+function InstructionPrint( state ) {
+	int ip = state.getRegister( "IP" );
+	int data = state.getMemory( ip-1 );
+	state.print( data );
+}
+
+function InstructionLoadR0( state ) {
+	int ip = state.getRegister( "IP" );
+	int address = state.getMemory( ip-1 );
+	
+	state.setRegister( "R0", state.getMemory( address ) );
+}
+
+function InstructionLoadR1( state ) {
+	int ip = state.getRegister( "IP" );
+	int address = state.getMemory( ip-1 );
+	
+	state.setRegister( "R1", state.getMemory( address ) );
+}
+
+function InstructionStoreR0( state ) {
+	int ip = state.getRegister( "IP" );
+	int address = state.getMemory( ip-1 );
+	
+	state.setMemory( address, state.getRegister( "R0" ) );
+}
+
+function InstructionStoreR1( state ) {
+	int ip = state.getRegister( "IP" );
+	int address = state.getMemory( ip-1 );
+	
+	state.setMemory( address, state.getRegister( "R1" ) );
+}
+
+function InstructionJump( state ) {
+	int ip = state.getRegister( "IP" );
+	int address = state.getMemory( ip-1 );            
+	
+	state.setRegister( "IP", address );
+}        
+
+function InstructionJumpIfR0is0( state ) {
+	if ( state.getRegister( "R0" ) == 0 ) {
+		int ip = state.getRegister( "IP" );
+		int address = state.getMemory( ip-1 );            
+	
+		state.setRegister( "IP", address );
+	}
+}    
+
+function InstructionJumpIfR0not0( state ) {
+	if ( state.getRegister( "R0" ) != 0 ) {
+		int ip = state.getRegister( "IP" );
+		int address = state.getMemory( ip-1 );            
+	
+		state.setRegister( "IP", address );
+	}
+}
+	
+/*package emulator.builtin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -163,3 +304,4 @@ public class Processor4917 extends FetchIncExecProcessor {
     }
     
 }
+*/

@@ -1,4 +1,22 @@
-package emulator.builtin;
+function BuiltinInstruction ( description, ipIncrement, instruction) {
+	this.description = description;
+	this.ipIncrement = ipIncrement;
+	this.instruction = instruction;
+}
+
+BuiltinInstruction.prototype.execute = function ( state ) {
+	this.instruction( state );
+}
+
+BuiltinInstruction.prototype.getDescription = function ( ) {
+	return this.description;
+}
+
+BuiltinInstruction.prototype.getBytes = function ( ) {
+	return this.ipIncrement;
+}
+
+/*package emulator.builtin;
 
 import emulator.*;
 
@@ -27,3 +45,4 @@ public class BuiltinInstruction implements IMicroInstruction {
 	}
     
 }
+*/

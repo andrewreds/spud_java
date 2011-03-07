@@ -5,29 +5,29 @@ function AppletRunner ( ) {
 }
 
 // Javascript interface functions:
-AppletRunner.prototype.step( ) {
+AppletRunner.prototype.step = function( ) {
 	this.emulator.step( state );
 	return this.getState( );
 }
 
-AppletRunner.prototype.clearState( ){
+AppletRunner.prototype.clearState = function( ){
 	this.state = new State(processor);
 	return this.getState( );
 }
 
-AppletRunner.prototype.setMemory( address, value ) {
+AppletRunner.prototype.setMemory = function( address, value ) {
 	this.state.setMemory( address, value );
 }
 
-AppletRunner.prototype.setRegister( register, value ) {
+AppletRunner.prototype.setRegister = function( register, value ) {
 	this.state.setRegister( register, value );
 }
 
-AppletRunner.prototype.getState( ) {
+AppletRunner.prototype.getState = function( ) {
 	return this.state.toJSON();
 }
 
-AppletRunner.prototype.executeScript( javascript ) {
+AppletRunner.prototype.executeScript = function( javascript ) {
 	console.log (javascript);
 	/*try {
 		getAppletContext().showDocument( new URL( "javascript:" + javascript ) );
@@ -37,11 +37,11 @@ AppletRunner.prototype.executeScript( javascript ) {
 	}*/
 }
 
-AppletRunner.prototype.getProcessor( ) {
+AppletRunner.prototype.getProcessor = function( ) {
 	return this.processor.getJSON( );
 }
 
-AppletRunner.prototype.loadSPuD( definition ) {
+AppletRunner.prototype.loadSPuD = function( definition ) {
 	var trialProcessor;
 	try {
 		trialProcessor = new InterpretedProcessor( definition );
@@ -49,7 +49,7 @@ AppletRunner.prototype.loadSPuD( definition ) {
 		this.processor = trialProcessor;
 		this.state = new State( processor );
 		this.emulator = new Emulator( );
-	} catch (InterpreterError e) {
+	} catch (e) {
 		executeScript("alert('Error parsing SPuD processor definition.');");
 	}
 	

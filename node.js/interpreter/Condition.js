@@ -1,4 +1,10 @@
-package emulator.interpreter;
+function Condition( condition, statements, continuation) {
+	this.condition = condition;
+	this.statements = statements;
+	this.continuation = continuation;
+}
+
+/*package emulator.interpreter;
 
 import java.util.ArrayList;
 
@@ -13,3 +19,4 @@ public class Condition {
     	this.continuation = continuation;
     }
 }
+*/

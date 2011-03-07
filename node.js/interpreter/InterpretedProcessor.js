@@ -1,4 +1,4 @@
-package emulator.interpreter;
+/*package emulator.interpreter;
 
 import emulator.*;
 
@@ -182,3 +182,4 @@ public class InterpretedProcessor extends FetchIncExecProcessor {
         }   
     }
 }
+*/

@@ -1,4 +1,4 @@
-package emulator.interpreter;
+/*package emulator.interpreter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -448,8 +448,4 @@ public class Interpreter {
     }
 
 }
-
-
-
-
-
+*/

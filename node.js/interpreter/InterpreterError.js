@@ -1,4 +1,4 @@
-package emulator.interpreter;
+/*package emulator.interpreter;
 
 public class InterpreterError extends Exception {
 	private static final long serialVersionUID = 1L;
@@ -34,3 +34,4 @@ public class InterpreterError extends Exception {
     }
     
 }
+*/
