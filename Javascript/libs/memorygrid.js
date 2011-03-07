@@ -71,7 +71,6 @@
 		animateCopy: function( cellIdFrom, cellIdTo, duration ) {
 			var fromObj = cellIdToObj.call( this, cellIdFrom );
 			var toObj   = cellIdToObj.call( this, cellIdTo );
-			
 			var moveObj = fromObj.clone().appendTo(this);
 			moveObj.unbind( );
 			moveObj.attr( 'id', 'animationcell' );
@@ -88,12 +87,13 @@
 			startOffset.left = Math.max( containerOffset.left, startOffset.left );
 			startOffset.left = Math.min( containerOffset.left + $(this).width(), startOffset.left );
 			
+			
 			moveObj.offset( startOffset );
 			
 			var toOffset = toObj.offset();
 			moveObj.animate( {
-				left:toOffset.left,
-				top:toOffset.top,
+				left:toOffset.left - moveObj.parent( ).offset( ).left,
+				top:toOffset.top - moveObj.parent( ).offset( ).top,
 			},
 			duration,
 			function() {
@@ -211,11 +211,18 @@
 			registerConsole += '</div>';
 		}
 		
+		var padding = 30;
+		var maxRows = 16;
+		if ( rows > maxRows ) {
+		    $(container).find('.ui-memorygrid-container').height( 280 );
+	    }
+		$(container).width( $(container).find('.ui-memorygrid').width( ) + padding );
+		
 		$(container).append( registerConsole );
 		
-		$(container).append('<div id="instructionBubble"></div>');
+		$(container).parent().append('<div id="instructionBubble"></div>');
 		
-		$(container).find('#instructionBubble').css('position', 'absolute').hide( );
+		$('#instructionBubble').hide( );
 		
 		$(container).append('<div id="ipLine"></div>');
 		
@@ -238,23 +245,37 @@
 					
 					var instruction = instructions[val];
 					
-					var bubble = $(container).find('#instructionBubble');
+					var bubble = $('#instructionBubble');
 					bubble.html( instruction );
-					var topOffset  = 30;//bubble.height();
-					var leftOffset = 0;//bubble.width()/2;
-					var offset = obj.offset( );
+					var topOffset  = 2*bubble.height();
+					var leftOffset = -10+bubble.width()/2;
+					var offset = { left: obj.offset( ).left, top: obj.offset( ).top };
 					
 					offset.left -= leftOffset;
 					offset.top  -= topOffset;
 					
 					bubble.css( 'top', offset.top );
 					bubble.css( 'left', offset.left );
-					bubble.fadeIn( "fast" );
+					
+					bubble.show( );
+					//bubble.fadeIn( "fast" );
 				}
 			}
 		).mouseout(
 			function( event ) {
-				$(container).find('#instructionBubble').hide( );
+				$('#instructionBubble').hide( );
+			}
+		);
+		
+		$(container).find('#instructionBubble').mouseout(
+			function( event ) {
+				$('#instructionBubble').hide( );
+			}
+		);
+		
+		$(container).mouseout(
+			function( event ) {
+				$('#instructionBubble').hide( );
 			}
 		);
 		

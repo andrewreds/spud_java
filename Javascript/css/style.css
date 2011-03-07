@@ -65,6 +65,11 @@
 	filter:alpha(opacity=60);
 }
 
+#uploadText {
+    border:1px solid #666;
+    resize: none;
+}
+
 .registerInput {
    width: 30px;
 }
@@ -76,4 +81,16 @@
 #buttons {
    position: absolute;
    top: 600px;
+   width:600px;
+   text-align:center;
+}
+
+#memoryOverlay {
+   position:absolute;
+   top:60px;
+   left:620px;
+   background-color: #efe;
+   border:1px solid #444;
+   border-radius:8px;
+   padding:10px;
 }

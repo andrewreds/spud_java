@@ -21,9 +21,7 @@ var assets = {
 	"hum"              : this.assetDir + "hum.mp3"
 };
 
-function changeImage( id, imgSuffix ) {
-    this.name = "Hardware";
-    
+function changeImage( id, imgSuffix ) {    
 	var buttonObj = $(id);
 	var id = buttonObj.attr( 'id' );
 	
@@ -36,6 +34,9 @@ function changeImage( id, imgSuffix ) {
 	
 	buttonObj.css( 'background-image', 'url("' + imgUrl + '")' );
 }
+
+
+// Begin class
 
 function HardwareComponent( ) {
     this.html = '<div id="background" class="graphic" height=1000>';
@@ -60,7 +61,9 @@ function HardwareComponent( ) {
     	"stepButton",
     ];
     
-    this.isMute = true;
+    this.name = "hardware";
+    
+    this.isMute = false;
 }
 
 HardwareComponent.prototype.setCSS = function( identifier, css ) {
@@ -132,6 +135,8 @@ HardwareComponent.prototype.init = function( windowObject ) {
 };
 
 HardwareComponent.prototype.update = function( newData, applet ) {
+    //console.log( newData );
+    
     this.setOutput( newData.output );
     this.setPipelineStep( newData.pipelineStep );
     
@@ -141,10 +146,27 @@ HardwareComponent.prototype.update = function( newData, applet ) {
     }
     
     this.numBellRings = newData.numBellRings;
+    
+    // do a sort of animation on halt
+    if ( newData.isHalted ) {
+        changeImage( "#fetchLED", "on" );
+        changeImage( "#incLED", "on" );
+        changeImage( "#exLED", "on" );
+        
+        $("#fetchLED").fadeOut( 1000 );
+        $("#incLED").fadeOut( 1000 );
+        $("#exLED").fadeOut( 1000 );
+    } else {
+        $("#fetchLED").show( );
+        $("#incLED").show( );
+        $("#exLED").show( );
+    }
 };
 
 HardwareComponent.prototype.updateProcessor = function( processorData, applet ) {
-    $("#chipLabel").html(processorData.name);
+    if ( processorData ) {
+        $("#chipLabel").html(processorData.name);
+    }
 };
 
 HardwareComponent.prototype.boardInit = function( ) {
@@ -189,10 +211,17 @@ HardwareComponent.prototype.liftButtons = function( ) {
 HardwareComponent.prototype.toggleMute = function( ) {
 	this.isMute = !this.isMute;
 	$.dbj_sound.enabledisable( );
+	if ( $.dbj_sound.enabled ) {
+	    $.dbj_sound.play( assets['hum'] );
+	}
 };
 
 HardwareComponent.prototype.turnOn = function( ) {
 	this.isOn = true;
+	if ( applet ) {
+	    applet.enabled = true;
+	    applet.reset( );
+    }
 
 	$( '#board' ).fadeIn( 'fast' );
 	$( '#outputLCD' ).fadeIn( 'slow' );
@@ -200,13 +229,18 @@ HardwareComponent.prototype.turnOn = function( ) {
 
 	if ( !this.isMute ) {
 		$.sound.play( assets['power_up'] );
+		$.dbj_sound.enable( );
+	} else {
+	    $.dbj_sound.disable( );
 	}
 
+    
 	$.dbj_sound.play( assets['hum'] );
 };
 
 HardwareComponent.prototype.turnOff = function( ) {
 	this.isOn = false;
+	applet.enabled = false;
     
     changeImage( "#fetchLED", "off" );
     changeImage( "#incLED", "off" );
@@ -245,7 +279,7 @@ HardwareComponent.prototype.runButton = function( ) {
 
 HardwareComponent.prototype.stepButton = function( ) {
     if ( this.isOn ) {
-        applet.step( );
+        applet.step( true ); // slow step
     }
 };
 
