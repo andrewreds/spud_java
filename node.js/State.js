@@ -87,7 +87,7 @@ State.prototype.getMemory = function ( address ) {
 
 State.prototype.setMemory = function( address, value ) {
 	address = this.constrainAddress( address );
-	memory[ address] = this.constrainMemory( value );
+	this.memory[ address] = this.constrainMemory( value );
 }
 
 State.prototype.getAllMemory = function ( ) {
@@ -134,6 +134,7 @@ State.prototype.printASCII = function ( value ) {
  
 State.prototype.ringBell = function ( ) {
 	//System.out.print("**DING**");
+	console.log ("**DING**");
 	this.numBellRings++;
 }
  

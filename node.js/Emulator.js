@@ -8,8 +8,8 @@ Emulator.prototype.canStateExecute = function ( state ) {
 
 Emulator.prototype.step = function ( state ) {
 
-	state.processor.pipeline.get( state.pipelineStep ).run( state );
-	state.pipelineStep = ( state.pipelineStep + 1 ) % state.processor.pipeline.size ( );
+	state.processor.pipeline[ state.pipelineStep ].run( state );
+	state.pipelineStep = ( state.pipelineStep + 1 ) % state.processor.pipeline.length;
 	
 	if ( state.pipelineStep == 0 ) {
 		// next pipeline step is the start of the cycle
@@ -19,7 +19,7 @@ Emulator.prototype.step = function ( state ) {
 	
 	// stop running when halted
 	if ( state.isHalted ) {
-		stop( );
+		this.stop( );
 	}
 }
     
@@ -27,9 +27,9 @@ Emulator.prototype.run = function ( state, maxCycles ) {
 	if ( this.canStateExecute( state ) ) {
 		this.state = state;
 		
-		repeatCount = (maxCycles * state.processor.pipeline.size());
-		for (i = 0; i < repeatCount && canStateExecute( state ); i++ ){
-			step( this.state );
+		repeatCount = (maxCycles * state.processor.pipeline.length);
+		for (i = 0; i < repeatCount && this.canStateExecute( state ); i++ ){
+			this.step( this.state );
 		}
 	}
 }

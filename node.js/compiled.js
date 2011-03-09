@@ -5,25 +5,25 @@ Emulator.prototype.canStateExecute = function(a) {
   return!a.isHalted
 };
 Emulator.prototype.step = function(a) {
-  a.processor.pipeline.get(a.pipelineStep).run(a);
-  a.pipelineStep = (a.pipelineStep + 1) % a.processor.pipeline.size();
+  a.processor.pipeline[a.pipelineStep].run(a);
+  a.pipelineStep = (a.pipelineStep + 1) % a.processor.pipeline.length;
   a.pipelineStep == 0 && a.executionStep++;
-  a.isHalted && stop()
+  a.isHalted && this.stop()
 };
-Emulator.prototype.run = function(a, g) {
+Emulator.prototype.run = function(a, b) {
   if(this.canStateExecute(a)) {
     this.state = a;
-    repeatCount = g * a.processor.pipeline.size();
-    for(i = 0;i < repeatCount && canStateExecute(a);i++) {
-      step(this.state)
+    repeatCount = b * a.processor.pipeline.length;
+    for(i = 0;i < repeatCount && this.canStateExecute(a);i++) {
+      this.step(this.state)
     }
   }
 };
 Emulator.prototype.stop = function() {
 };
-function Instruction(a, g) {
+function Instruction(a, b) {
   this.description = a;
-  this.ipIncrement = g
+  this.ipIncrement = b
 }
 Instruction.prototype.execute = function() {
 };
@@ -42,19 +42,19 @@ Processor.prototype.getNumRegisters = function() {
 Processor.prototype.setRegisterNames = function(a) {
   this.registerIndexLookup = {};
   this.registerNames = a;
-  var g = false, h = false;
+  var b = false, c = false;
   for(i = 0;i != a.length;i++) {
-    var k = a[i];
-    this.registerIndexLookup[k] = i;
-    if(k == "IP") {
-      g = true
+    var d = a[i];
+    this.registerIndexLookup[d] = i;
+    if(d == "IP") {
+      b = true
     }else {
-      if(k == "IS") {
-        h = true
+      if(d == "IS") {
+        c = true
       }
     }
   }
-  if(!g || !h) {
+  if(!b || !c) {
     throw Error("Processor must have IP and IS registers");
   }
 };
@@ -71,27 +71,27 @@ Processor.prototype.getJSON = function() {
   a += numMemoryAddresses;
   a += ",\n";
   a += '    "registers": [';
-  var g = true, h;
-  for(h in this.registerNames) {
-    g || (a += ",");
-    g = false;
+  var b = true, c;
+  for(c in this.registerNames) {
+    b || (a += ",");
+    b = false;
     a += '"';
-    a += this.registerNames[h];
+    a += this.registerNames[c];
     a += '"'
   }
   a += "],\n";
   a += '    "instructions": [\n';
-  for(g = 0;g < this.instructions.length;g++) {
-    h = this.instructions[g];
-    if(h != null) {
+  for(b = 0;b < this.instructions.length;b++) {
+    c = this.instructions[b];
+    if(c != null) {
       a += "        [";
-      a += g;
+      a += b;
       a += ", ";
-      a += h.getBytes();
+      a += c.getBytes();
       a += ', "';
-      a += h.getDescription();
+      a += c.getDescription();
       a += '"]';
-      if(g != instructions.length - 1) {
+      if(b != instructions.length - 1) {
         a += ","
       }
       a += "\n"
@@ -105,47 +105,51 @@ function FetchIncExecProcessor() {
   this.__proto__.__proto__.constructor();
   this.pipeline = [];
   this.fetch = {run:function(a) {
-    FetchIncExecProcessor.fetch(a)
+    FetchIncExecProcessor.prototype.fetch(a)
   }};
   this.pipeline[0] = this.fetch;
   this.increment = {run:function(a) {
-    FetchIncExecProcessor.increment(a)
+    FetchIncExecProcessor.prototype.increment(a)
   }};
   this.pipeline[1] = this.increment;
   this.execute = {run:function(a) {
-    FetchIncExecProcessor.execute(a)
+    FetchIncExecProcessor.prototype.execute(a)
   }};
   this.pipeline[2] = this.execute
 }
 FetchIncExecProcessor.prototype = new Processor;
 FetchIncExecProcessor.prototype.fetch = function(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g);
-  a.setRegister("IS", g)
+  var b = a.getRegister("IP");
+  b = a.getMemory(b);
+  a.setRegister("IS", b)
 };
 FetchIncExecProcessor.prototype.increment = function(a) {
-  var g = a.getRegister("IP"), h = a.getRegister("IS"), k = null;
-  if(h < a.processor.instructions.size()) {
-    k = a.processor.instructions.get(h)
+  var b = a.getRegister("IP"), c = a.getRegister("IS"), d = null;
+  if(c < a.processor.instructions.length) {
+    d = a.processor.instructions[c]
   }
-  h = k == null ? 1 : k.getBytes();
-  a.setRegister("IP", g + h)
+  c = d == null ? 1 : d.getBytes();
+  a.setRegister("IP", b + c)
 };
 FetchIncExecProcessor.prototype.execute = function(a) {
-  var g = a.getRegister("IS"), h = null;
-  if(g < a.processor.instructions.size()) {
-    h = a.processor.instructions.get(g)
+  var b = a.getRegister("IS"), c = null;
+  if(b < a.processor.instructions.length) {
+    c = a.processor.instructions[b]
   }
-  h != null && h.execute(a)
+  if(c != null) {
+    c.execute(a)
+  }else {
+    throw error;
+  }
 };
 function SimpleRunner() {
 }
-SimpleRunner.prototype.run = function(a, g, h) {
-  g = new InterpretedProcessor(g);
-  g = new State(g);
-  g.setAllMemory(a);
-  (new Emulator).run(g, h);
-  return g.toJSON()
+SimpleRunner.prototype.run = function(a, b, c) {
+  b = new InterpretedProcessor(b);
+  b = new State(b);
+  b.setAllMemory(a);
+  (new Emulator).run(b, c);
+  return b.toJSON()
 };
 function State(a) {
   this.processor = a;
@@ -154,12 +158,12 @@ function State(a) {
   this.numBellRings = 0;
   this.memory = [];
   this.registers = [];
-  var g;
-  for(g = 0;g != a.numMemoryAddresses;g++) {
-    this.memory[g] = 0
+  var b;
+  for(b = 0;b != a.numMemoryAddresses;b++) {
+    this.memory[b] = 0
   }
-  for(g = 0;g != a.getNumRegisters();g++) {
-    this.registers[g] = 0
+  for(b = 0;b != a.getNumRegisters();b++) {
+    this.registers[b] = 0
   }
   this.reset()
 }
@@ -202,30 +206,30 @@ State.prototype.constrainAddress = function(a) {
 State.prototype.getRegister = function(a) {
   return this.constrainRegister(this.registers[this.processor.registerIndexLookup[a]])
 };
-State.prototype.setRegister = function(a, g) {
-  this.registers[this.processor.registerIndexLookup[a]] = this.constrainRegister(g)
+State.prototype.setRegister = function(a, b) {
+  this.registers[this.processor.registerIndexLookup[a]] = this.constrainRegister(b)
 };
 State.prototype.getMemory = function(a) {
   a = this.constrainAddress(a);
   return this.constrainMemory(this.memory[a])
 };
-State.prototype.setMemory = function(a, g) {
+State.prototype.setMemory = function(a, b) {
   a = this.constrainAddress(a);
-  memory[a] = this.constrainMemory(g)
+  this.memory[a] = this.constrainMemory(b)
 };
 State.prototype.getAllMemory = function() {
   return this.memory.slice(0)
 };
 State.prototype.setAllMemory = function(a) {
-  var g;
-  for(g = 0;g != this.processor.numMemoryAddresses;g++) {
-    memory[g] = g < a.length ? this.constrainMemory(a[g]) : 0
+  var b;
+  for(b = 0;b != this.processor.numMemoryAddresses;b++) {
+    memory[b] = b < a.length ? this.constrainMemory(a[b]) : 0
   }
 };
 State.prototype.setAllRegisters = function(a) {
-  var g;
-  for(g = 0;g != this.processor.getNumRegisters();g++) {
-    registers[g] = g < a.lenght ? this.constrainRegister(a[g]) : 0
+  var b;
+  for(b = 0;b != this.processor.getNumRegisters();b++) {
+    registers[b] = b < a.lenght ? this.constrainRegister(a[b]) : 0
   }
 };
 State.prototype.print = function(a) {
@@ -235,6 +239,7 @@ State.prototype.printASCII = function(a) {
   this.output += String.fromCharCode(a)
 };
 State.prototype.ringBell = function() {
+  console.log("**DING**");
   this.numBellRings++
 };
 State.prototype.halt = function() {
@@ -244,25 +249,25 @@ State.prototype.toJSON = function() {
   var a = "";
   a += "{\n";
   a += '    "registers": {\n';
-  var g = true, h;
-  for(h in this.registerNames) {
-    g || (a += ",");
-    g = false;
-    var k = this.registerNames[h];
+  var b = true, c;
+  for(c in this.registerNames) {
+    b || (a += ",");
+    b = false;
+    var d = this.registerNames[c];
     a += '        "';
-    a += k;
+    a += d;
     a += '": ';
-    a += this.registers[this.processor.registerIndexLookup[k]];
+    a += this.registers[this.processor.registerIndexLookup[d]];
     a += "\n"
   }
   a += "    },\n";
   a += '    "memory": [';
-  g = true;
+  b = true;
   for(memid in this.memory) {
-    g || (a += ", ");
-    g = false;
-    k = this.memory[memid];
-    a += String(k)
+    b || (a += ", ");
+    b = false;
+    d = this.memory[memid];
+    a += String(d)
   }
   a += "],\n";
   a += '    "isHalted": ';
@@ -283,10 +288,10 @@ State.prototype.toJSON = function() {
   a += "}";
   return a
 };
-function BuiltinInstruction(a, g, h) {
+function BuiltinInstruction(a, b, c) {
   this.description = a;
-  this.ipIncrement = g;
-  this.instruction = h
+  this.ipIncrement = b;
+  this.instruction = c
 }
 BuiltinInstruction.prototype.execute = function(a) {
   this.instruction(a)
@@ -313,74 +318,74 @@ function InstructionHalt(a) {
   a.halt()
 }
 function InstructionAdd(a) {
-  var g = a.getRegister("R0"), h = a.getRegister("R1");
-  a.setRegister("R0", g + h)
+  var b = a.getRegister("R0"), c = a.getRegister("R1");
+  a.setRegister("R0", b + c)
 }
 function InstructionSubtract(a) {
-  var g = a.getRegister("R0"), h = a.getRegister("R1");
-  a.setRegister("R0", g - h)
+  var b = a.getRegister("R0"), c = a.getRegister("R1");
+  a.setRegister("R0", b - c)
 }
 function InstructionIncrementR0(a) {
-  var g = a.getRegister("R0");
-  a.setRegister("R0", g + 1)
+  var b = a.getRegister("R0");
+  a.setRegister("R0", b + 1)
 }
 function InstructionIncrementR1(a) {
-  var g = a.getRegister("R1");
-  a.setRegister("R1", g + 1)
+  var b = a.getRegister("R1");
+  a.setRegister("R1", b + 1)
 }
 function InstructionDecrementR0(a) {
-  var g = a.getRegister("R0");
-  a.setRegister("R0", g - 1)
+  var b = a.getRegister("R0");
+  a.setRegister("R0", b - 1)
 }
 function InstructionDecrementR1(a) {
-  var g = a.getRegister("R1");
-  a.setRegister("R1", g - 1)
+  var b = a.getRegister("R1");
+  a.setRegister("R1", b - 1)
 }
 function InstructionRingBell(a) {
   a.ringBell()
 }
 function InstructionPrint(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.print(g)
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.print(b)
 }
 function InstructionLoadR0(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.setRegister("R0", a.getMemory(g))
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.setRegister("R0", a.getMemory(b))
 }
 function InstructionLoadR1(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.setRegister("R1", a.getMemory(g))
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.setRegister("R1", a.getMemory(b))
 }
 function InstructionStoreR0(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.setMemory(g, a.getRegister("R0"))
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.setMemory(b, a.getRegister("R0"))
 }
 function InstructionStoreR1(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.setMemory(g, a.getRegister("R1"))
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.setMemory(b, a.getRegister("R1"))
 }
 function InstructionJump(a) {
-  var g = a.getRegister("IP");
-  g = a.getMemory(g - 1);
-  a.setRegister("IP", g)
+  var b = a.getRegister("IP");
+  b = a.getMemory(b - 1);
+  a.setRegister("IP", b)
 }
 function InstructionJumpIfR0is0(a) {
   if(a.getRegister("R0") == 0) {
-    var g = a.getRegister("IP");
-    g = a.getMemory(g - 1);
-    a.setRegister("IP", g)
+    var b = a.getRegister("IP");
+    b = a.getMemory(b - 1);
+    a.setRegister("IP", b)
   }
 }
 function InstructionJumpIfR0not0(a) {
   if(a.getRegister("R0") != 0) {
-    var g = a.getRegister("IP");
-    g = a.getMemory(g - 1);
-    a.setRegister("IP", g)
+    var b = a.getRegister("IP");
+    b = a.getMemory(b - 1);
+    a.setRegister("IP", b)
   }
 }
 ;function AppletRunner() {
@@ -389,18 +394,22 @@ function InstructionJumpIfR0not0(a) {
   this.emulator = new Emulator
 }
 AppletRunner.prototype.step = function() {
-  this.emulator.step(state);
+  this.emulator.step(this.state);
+  return this.getState()
+};
+AppletRunner.prototype.run = function(a) {
+  this.emulator.run(this.state, a);
   return this.getState()
 };
 AppletRunner.prototype.clearState = function() {
   this.state = new State(this.processor);
   return this.getState()
 };
-AppletRunner.prototype.setMemory = function(a, g) {
-  this.state.setMemory(a, g)
+AppletRunner.prototype.setMemory = function(a, b) {
+  this.state.setMemory(a, b)
 };
-AppletRunner.prototype.setRegister = function(a, g) {
-  this.state.setRegister(a, g)
+AppletRunner.prototype.setRegister = function(a, b) {
+  this.state.setRegister(a, b)
 };
 AppletRunner.prototype.getState = function() {
   return this.state.toJSON()
@@ -412,23 +421,17 @@ AppletRunner.prototype.getProcessor = function() {
   return this.processor.getJSON()
 };
 AppletRunner.prototype.loadSPuD = function(a) {
-  var g;
+  var b;
   try {
-    this.processor = g = new InterpretedProcessor(a);
+    this.processor = b = new InterpretedProcessor(a);
     this.state = new State(processor);
     this.emulator = new Emulator
-  }catch(h) {
+  }catch(c) {
     executeScript("alert('Error parsing SPuD processor definition.');")
   }
   return this.getState()
 };
-console.log("Hello World");
-console.log(new AppletRunner);
-b = new Emulator;
-c = new Instruction;
-d = new Processor;
-e = new FetchIncExecProcessor;
-f = new SimpleRunner;
-j = new State(new Processor4917);
-console.log("Done :)");
+var app = new AppletRunner;
+app.setMemory(0, 7);
+app.run(1E3);
 

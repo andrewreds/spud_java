@@ -6,7 +6,7 @@ function FetchIncExecProcessor ( ) {
 	
 	
 	this.fetch = { "run" : function (state) {
-			FetchIncExecProcessor.fetch( state );
+			FetchIncExecProcessor.prototype.fetch( state );
 		}
 	};
 	
@@ -14,7 +14,7 @@ function FetchIncExecProcessor ( ) {
 	
 	
 	this.increment = { "run" : function (state) {
-			FetchIncExecProcessor.increment( state );
+			FetchIncExecProcessor.prototype.increment( state );
 		}
 	};
 	
@@ -22,7 +22,7 @@ function FetchIncExecProcessor ( ) {
 	
 	
 	this.execute = { "run" : function (state) {
-			FetchIncExecProcessor.execute( state );
+			FetchIncExecProcessor.prototype.execute( state );
 		}
 	};
 	
@@ -45,8 +45,8 @@ FetchIncExecProcessor.prototype.increment = function( state ) {
 	
 	var instruction = null;
 	
-	if (instructionNum < state.processor.instructions.size()) {
-		instruction = state.processor.instructions.get( instructionNum );
+	if (instructionNum < state.processor.instructions.length) {
+		instruction = state.processor.instructions[ instructionNum ];
 	}
 	
 	var ipIncrement;
@@ -66,14 +66,15 @@ FetchIncExecProcessor.prototype.execute = function( state ) {
 	
 	var instruction = null;
 	
-	if (instructionNum < state.processor.instructions.size()) {
-		instruction = state.processor.instructions.get( instructionNum );
+	if (instructionNum < state.processor.instructions.length) {
+		instruction = state.processor.instructions[ instructionNum ];
 	}
 	
 	if ( instruction != null ) {
 		instruction.execute( state );
 	} else {
 		// be evil
+		throw error;
 	}
 }
 /*package emulator;

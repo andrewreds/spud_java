@@ -6,7 +6,12 @@ function AppletRunner ( ) {
 
 // Javascript interface functions:
 AppletRunner.prototype.step = function( ) {
-	this.emulator.step( state );
+	this.emulator.step( this.state );
+	return this.getState( );
+}
+
+AppletRunner.prototype.run = function( numCommands ) {
+	this.emulator.run( this.state , numCommands);
 	return this.getState( );
 }
 
