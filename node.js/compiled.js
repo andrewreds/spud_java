@@ -431,7 +431,56 @@ AppletRunner.prototype.loadSPuD = function(a) {
   }
   return this.getState()
 };
-var app = new AppletRunner;
-app.setMemory(0, 7);
-app.run(1E3);
-
+var stdin = process.openStdin(), app = new AppletRunner, memaddloc = 0;
+console.log("Welcome to the " + app.processor.name + " Emulator");
+console.log('enter "help" for more infomation');
+stdin.on("data", function(a) {
+  commands = ("" + a).replace("\n", "").split(" ");
+  if(commands.length > 0) {
+    if(commands[0] == commands[0] * 1) {
+      for(a = 0;a < commands.length;a++) {
+        if(commands[a] == commands[a] * 1) {
+          app.setMemory(memaddloc, commands[a] * 1);
+          memaddloc++
+        }
+      }
+    }else {
+      if(commands[0] == "run") {
+        a = 1E3;
+        if(commands.length > 1 && commands[1] * 1 > 0) {
+          a = commands[1] * 1
+        }
+        app.run(a)
+      }else {
+        if(commands[0] == "dump") {
+          dump()
+        }else {
+          if(commands[0] == "step") {
+            app.step()
+          }else {
+            if(commands[0] == "help") {
+              console.log("Commands: dump, step, run, <number>");
+              console.log("dump: Prints out all memory");
+              console.log("step: The microcontroler goes fored through one part of the cycle. 3 steps is required to run one instruction");
+              console.log("run <x>: Steps x times. is no x, steps 1000 times");
+              console.log("<number> sets the memory cells to the numbers")
+            }else {
+              console.log('Command "' + commands[0] + '" Not Found!!!')
+            }
+          }
+        }
+      }
+    }
+  }
+  app.state.isHalted && console.log("HALTED.")
+});
+function dump() {
+  for(var a = app.processor.getRegisterNames(), b = 0;b < a.length;b++) {
+    console.log(a[b] + ": " + app.state.getRegister(a[b]))
+  }
+  a = app.state.memory;
+  for(b = 0;b < a.length;b++) {
+    console.log(b + ": " + a[b])
+  }
+}
+;
