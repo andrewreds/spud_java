@@ -1,3 +1,159 @@
+function InterpretedInstruction (description, ipIncrement, code) {
+	//super(description, ipIncrement)
+	this.__proto__.__proto__.constructor(description, ipIncrement);
+
+	this.tokeniser = new Tokeniser();
+	this.conditions = [];
+	
+	this.updateCode( code );
+	
+}
+
+InterpretedInstruction.prototype = new Instruction();
+
+InterpretedInstruction.prototype.removeWhitespace = function ( code ) {
+	// replace one or more whitespace chars with a nothing
+	return code.replace( /\s/g, "" );
+}
+
+InterpretedInstruction.prototype.addCondition = function ( conditionCode, statements, continuation ) {
+	
+	var condition = this.tokeniser.tokenise( conditionCode );
+	var tokenisedStatements = new [];
+	
+	//trace( conditionCode );
+	//trace( statements );
+	
+	for ( var statement in statements.split( Interpreter.statementSeparator ) ) {
+		tokenisedStatements.push ( tokeniser.tokenise( statement ) );
+	}
+	
+	//trace( "[addCondition] tokenised as: " );
+	//trace( tokenisedStatements );
+	conditions.push( new Condition (condition, tokenisedStatements, continuation) );
+}
+
+InterpretedInstruction.prototype.updateCode = function ( code ) {
+	// { code = characters after number, increment defn }
+	
+	code = this.removeWhitespace( code );
+	this.conditions = [];
+	
+	// try/catch (non-trusted data)
+	
+	var startingSymbol = code.charAt( 0 );
+	
+	// detect and remove starting symbol
+	if ( startingSymbol == Interpreter.guardKeyword.charAt( 0 ) ) {
+		// TODO:
+		// InterpreterError.assert_( code.substring( 0, Interpreter.guardKeyword.length() ).equals(Interpreter.guardKeyword), "Invalid symbol after instruction header" );
+		code = code.substr( Interpreter.guardKeyword.length, code.length );
+		startingSymbol = Interpreter.guardKeyword;
+	} else {
+		code = code.substring( 1, code.length );
+	}
+	
+	//trace( "[updateCode] startingSymbol: " + startingSymbol );
+	//trace( "[updateCode] code: " + code );
+	
+	
+	//trace( "[updateCode] Building Tokens for '" + startingSymbol + "': " );
+	
+	// extract helper clause
+	var parts = code.split( Interpreter.helperKeyword );
+	code = parts[0];
+	
+	//trace( "[updateCode] parts" + parts.toString() );
+	
+	if ( parts.length > 1 ) {
+		// parse helper clause
+		// TODO:
+		//InterpreterError.assert_( parts.size() == 2, "Only one '" + Interpreter.helperKeyword + "' allowed" );
+		
+		var whereClause = parts[1];
+		
+		var whereStatements = whereClause.split( Interpreter.statementSeparator );
+		
+		this.where = {};
+		for ( var whereStatement in whereStatements ) {
+			
+			if ( whereStatement.length > 0 ) {
+				
+				var statementParts = whereStatement.split( "=" );
+			
+				// TODO:
+				//InterpreterError.assert_( statementParts.size() == 2, "assignment required" );
+			
+				var key = statementParts[0];
+				var expressionValue = statementParts[1];
+			
+				this.where.push( key, this.tokeniser.tokenise( expressionValue ) );
+			}
+		}
+	}
+	
+	if ( startingSymbol == Interpreter.conditionTerminator ) {
+		// is a single command
+		
+		//trace( "[updateCode] Single Instruction" );
+		this.addCondition( "true", code, false );
+	} else if ( startingSymbol == Interpreter.guardKeyword ) {
+		// is a conditional command
+		//trace( "[updateCode] Conditional Instruction" );
+		// split code into condition blocks
+		var chunks = code.split( Interpreter.guardKeyword );
+		
+		//trace( chunks );
+		
+		for ( var i = 0; i != chunks.length; i++ ) {
+			
+			// split condition blocks into condition and program
+			var subChunks = chunks[i].split( nterpreter.conditionTerminator );
+			var continuation = false;
+			
+			// fallthrough dodgy conditions
+			if ( subChunks.length == 1 ) {
+				subChunks = chunks[i].split( "?" );
+				continuation = true;
+			}
+			
+			var condition = subChunks[0];
+			var program = subChunks[1];
+			
+			if ( condition.length > 0 ) {
+				addCondition( condition, program, continuation );
+			}
+		}    
+	}
+}
+
+InterpretedInstruction.prototype.execute = function ( state ) {
+	for ( var condition in this.conditions ) {
+		try {
+			var conditionValue = Interpreter.interpretCondition( condition.condition, state, this.where );
+
+			if ( conditionValue ) {
+				
+				//trace( "EXECUTING: " + conditionObj['statements'] );
+				for ( var statement in condition.statements ) {
+
+					//trace( "  * " + statement );
+					Interpreter.interpretStatement( statement, state, this.where );
+				}
+				
+				// escape after a true condition
+				if ( !condition.continuation ) {
+					break;
+				}
+			}
+		} catch ( interpreterError ) {
+			// TODO:
+			console.log("Error (InterpretedInstruction.java)" + interpreterError);
+			//Alert.show( "Parsing Error: " + interpreterError.message );
+		}
+	}
+}
+
 /*package emulator.interpreter;
 
 import java.util.ArrayList;

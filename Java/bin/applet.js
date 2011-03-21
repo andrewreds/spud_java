@@ -10,6 +10,7 @@ function Applet( updateCallback, processorUpdateCallback ) {
     this.updateCallback = updateCallback;
     this.processorUpdateCallback = processorUpdateCallback;
     this.currentProgram = [];
+    this.enabled = true;
 }
 
 Applet.prototype.init = function( id ) {
@@ -21,6 +22,8 @@ Applet.prototype.init = function( id ) {
 };
 
 Applet.prototype.updateProcessor = function( s ) {
+    if ( !this.enabled ) return;
+    
     if ( s == undefined ) {
         s = $( this.id )[0].getProcessor( );
     }
@@ -29,18 +32,20 @@ Applet.prototype.updateProcessor = function( s ) {
     this.processorUpdateCallback( );
 };
 
-Applet.prototype.update = function( s ) {
+Applet.prototype.update = function( s, slow ) {
+    if ( !this.enabled ) return;
+    
     if ( s == undefined ) {
         s = $( this.id )[0].getState( );
     }
 
     this.state = JSON.parse( s );
-    this.updateCallback( );
+    this.updateCallback( slow );
 };
 
-Applet.prototype.step = function( ) {
+Applet.prototype.step = function( slow ) {
     if (!this.state.isHalted) {
-        this.update( $( this.id )[0].step( ) );
+        this.update( $( this.id )[0].step( ), slow );
     }
 };
 

@@ -1,6 +1,7 @@
 function UploadComponent( ) {
     this.name = "upload";
-    this.html = '<textarea id="uploadText"></textarea>';
+    this.defaultText = "Separate instructions with spaces";
+    this.html = '<textarea id="uploadText">' + this.defaultText + '</textarea>';
     this.dialogOptions = {
         minWidth: 480,
         minHeight: 240,
@@ -10,7 +11,7 @@ function UploadComponent( ) {
                 rawProgram = $( "#uploadText" ).val( );
                 applet.upload( rawProgram );
             }, 
-            "Cancel": function() { 
+            "Hide": function() { 
                 $(this).dialog("close"); 
             }
         }
@@ -22,11 +23,24 @@ UploadComponent.prototype.init = function( windowObject ) {
     this.windowObject = windowObject;
     
     windowObject.css( "overflow", "hidden" );
-    $('#uploadText').css( "width", "100%" );
-    $('#uploadText').css( "height", "100%" );
+    $('#uploadText').css( "width", "99%" );
+    $('#uploadText').css( "height", "99%" );
     
+    var defaultText = this.defaultText;
+    $('#uploadText').mousedown(
+        function( ) {
+            if ( $('#uploadText').val() == defaultText ) {
+                $('#uploadText').val( "" );
+            }
+        }
+    );
+
     // resizes the textbox
+	var offset = spudContainer.offset( );
+	var x = offset.left + 100;
+	var y = offset.top + 100;
     windowObject.dialog("option", "height", "240");
+    windowObject.dialog("option", "position", [x,y]);
 };
 
 UploadComponent.prototype.update = function( newData, applet ) {

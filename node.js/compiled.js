@@ -431,6 +431,670 @@ AppletRunner.prototype.loadSPuD = function(a) {
   }
   return this.getState()
 };
+function Condition(a, b, c) {
+  this.condition = a;
+  this.statements = b;
+  this.continuation = c
+}
+;function InterpretedInstruction(a, b, c) {
+  this.__proto__.__proto__.constructor(a, b);
+  this.tokeniser = new Tokeniser;
+  this.conditions = [];
+  this.updateCode(c)
+}
+InterpretedInstruction.prototype = new Instruction;
+InterpretedInstruction.prototype.removeWhitespace = function(a) {
+  return a.replace(/\s/g, "")
+};
+InterpretedInstruction.prototype.addCondition = function(a, b, c) {
+  a = this.tokeniser.tokenise(a);
+  var d = new [], e;
+  for(e in b.split(Interpreter.statementSeparator)) {
+    d.push(tokeniser.tokenise(e))
+  }
+  conditions.push(new Condition(a, d, c))
+};
+InterpretedInstruction.prototype.updateCode = function(a) {
+  a = this.removeWhitespace(a);
+  this.conditions = [];
+  var b = a.charAt(0);
+  if(b == Interpreter.guardKeyword.charAt(0)) {
+    a = a.substr(Interpreter.guardKeyword.length, a.length);
+    b = Interpreter.guardKeyword
+  }else {
+    a = a.substring(1, a.length)
+  }
+  var c = a.split(Interpreter.helperKeyword);
+  a = c[0];
+  if(c.length > 1) {
+    c = c[1].split(Interpreter.statementSeparator);
+    this.where = {};
+    for(var d in c) {
+      if(d.length > 0) {
+        var e = d.split("=");
+        this.where.push(e[0], this.tokeniser.tokenise(e[1]))
+      }
+    }
+  }
+  if(b == Interpreter.conditionTerminator) {
+    this.addCondition("true", a, false)
+  }else {
+    if(b == Interpreter.guardKeyword) {
+      a = a.split(Interpreter.guardKeyword);
+      for(b = 0;b != a.length;b++) {
+        e = a[b].split(nterpreter.conditionTerminator);
+        d = false;
+        if(e.length == 1) {
+          e = a[b].split("?");
+          d = true
+        }
+        c = e[0];
+        e = e[1];
+        c.length > 0 && addCondition(c, e, d)
+      }
+    }
+  }
+};
+InterpretedInstruction.prototype.execute = function(a) {
+  for(var b in this.conditions) {
+    try {
+      if(Interpreter.interpretCondition(b.condition, a, this.where)) {
+        for(var c in b.statements) {
+          Interpreter.interpretStatement(c, a, this.where)
+        }
+        if(!b.continuation) {
+          break
+        }
+      }
+    }catch(d) {
+      console.log("Error (InterpretedInstruction.java)" + d)
+    }
+  }
+};
+function Interpreter(a, b, c) {
+  this.state = b;
+  this.tokens = a;
+  this.where = c;
+  this.guardKeyword = "case";
+  this.helperKeyword = "where";
+  this.pretestKeyword = "whenever";
+  this.statementSeparator = ";";
+  this.conditionTerminator = ":";
+  this.instructionPartSeparator = ",";
+  this.pendingToken = this.acceptedToken = null;
+  this.tokenPos = 0;
+  this.internalAccessible = false;
+  this.getToken()
+}
+Interpreter.prototype.getToken = function() {
+  if(this.tokenPos != tokens.length) {
+    this.pendingToken = this.tokens[tokenPos];
+    this.tokenPos++
+  }else {
+    this.pendingToken = null
+  }
+};
+Interpreter.prototype.accept = function(a) {
+  var b = false;
+  if(this.pendingToken != null && this.pendingToken.type == a) {
+    this.acceptedToken = this.pendingToken;
+    this.getToken();
+    b = true
+  }
+  return b
+};
+Interpreter.prototype.expect = function(a) {
+  if(!this.accept(a)) {
+    throw"Expected " + Token.typeString(a) + " but found " + pendingToken.typeToString();
+  }
+};
+Interpreter.prototype.validRegister = function(a) {
+  return this.state.processor.getRegisterNames().indexOf(a) != -1
+};
+Interpreter.prototype.bitExpression = function() {
+  for(var a = this.addExpression();this.accept(Token.OpBitwise);) {
+    if(this.acceptedToken.value == "^") {
+      a ^= this.addExpression()
+    }else {
+      if(this.acceptedToken.value == "&") {
+        a &= this.addExpression()
+      }else {
+        if(this.acceptedToken.value == "|") {
+          a |= this.addExpression()
+        }else {
+          if(this.acceptedToken.value == ">>") {
+            a >>= this.addExpression()
+          }else {
+            if(this.acceptedToken.value == "<<") {
+              a <<= this.addExpression()
+            }else {
+              throw"Unknown bitwise operator: " + acceptedToken.value;
+            }
+          }
+        }
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.addExpression = function() {
+  for(var a = this.mulExpression();this.accept(Token.OpTerm);) {
+    if(this.acceptedToken.value == "+") {
+      a += this.mulExpression()
+    }else {
+      if(this.acceptedToken.value == "-") {
+        a -= this.mulExpression()
+      }else {
+        throw"Unknown additive operator: " + acceptedToken.value;
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.mulExpression = function() {
+  for(var a = this.unaryExpression();accept(Token.OpFactor);) {
+    if(this.acceptedToken.value == "*") {
+      a *= this.unaryExpression()
+    }else {
+      if(this.acceptedToken.value == "/") {
+        a /= this.unaryExpression()
+      }else {
+        if(this.acceptedToken.value == "%") {
+          a %= this.unaryExpression()
+        }else {
+          throw"Unknown multiplicative operator: " + acceptedToken.value;
+        }
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.unaryExpression = function() {
+  var a = this.accept(Token.OpUnary), b = this.simpleExpression();
+  if(a) {
+    if(this.acceptedToken.value == "~") {
+      b = ~b
+    }else {
+      throw"Unknown unary operator: " + acceptedToken.value;
+    }
+  }
+  return b
+};
+Interpreter.prototype.simpleExpression = function() {
+  var a = -1;
+  if(this.accept(Token.GroupOpen)) {
+    a = this.intExpression();
+    this.expect(Token.GroupClose)
+  }else {
+    if(this.accept(Token.Integer)) {
+      a = this.acceptedToken.value * 1
+    }else {
+      if(this.accept(Token.Hex)) {
+        a = parseInt(this.acceptedToken.value, 16)
+      }else {
+        if(this.pendingToken.type == Token.RegisterName || this.pendingToken.type == Token.DerefOpen || this.pendingToken.type == Token.RegRefOpen) {
+          a = this.identifier()
+        }else {
+          if(this.pendingToken != null) {
+            throw"Unable to parse expression at: " + pendingToken.value;
+          }
+        }
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.identifier = function() {
+  var a = -1;
+  if(this.accept(Token.RegisterName)) {
+    a = this.acceptedToken.value;
+    if(this.validRegister(a)) {
+      a = this.state.getRegister(a)
+    }else {
+      if(this.where.containsKey(a)) {
+        a = Interpreter.interpretExpression(this.where[a], this.state, this.where)
+      }else {
+        throw"Unknown register or 'where' identifier: " + a;
+      }
+    }
+  }else {
+    if(this.accept(Token.DerefOpen)) {
+      a = this.intExpression();
+      this.expect(Token.DerefClose);
+      a = this.state.getMemory(a)
+    }else {
+      if(this.accept(Token.RegRefOpen)) {
+        var b = this.intExpression();
+        this.expect(Token.RegRefClose);
+        if(b < this.state.processor.getNumRegisters()) {
+          a = this.state.processor.getRegisterNames()[b];
+          a = this.state.getRegister(a)
+        }
+      }else {
+        if(this.accept(Token.Internal)) {
+          if(this.internalAccessible) {
+            if(this.acceptedToken.value == "numBellRings") {
+              a = this.state.numBellRings
+            }else {
+              if(this.acceptedToken.value == "numCycles") {
+                a = this.state.executionStep
+              }else {
+                throw"Unknown integer internal value";
+              }
+            }
+          }else {
+            throw"Internal information inaccessible";
+          }
+        }else {
+          throw"Unrecognised identifier: " + pendingToken.value;
+        }
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.intExpression = function() {
+  return this.bitExpression()
+};
+Interpreter.prototype.stringComparison = function() {
+  var a;
+  if(this.internalAccessible) {
+    this.expect(Token.Internal);
+    if(this.acceptedToken.value != "output") {
+      throw"Unknown internal string identifier: " + acceptedToken.value;
+    }
+    this.expect(Token.OpComparison);
+    if(this.acceptedToken.value == "==") {
+      this.expect(Token.StringLiteral);
+      a = this.state.output == acceptedToken.value
+    }else {
+      if(this.acceptedToken.value == "!=") {
+        this.expect(Token.StringLiteral);
+        a = this.state.output != acceptedToken.value
+      }else {
+        throw"Unknown string comparison operator: " + acceptedToken.value;
+      }
+    }
+  }else {
+    throw"Internal information inaccessible.";
+  }
+  return a
+};
+Interpreter.prototype.boolExpression = function() {
+  var a;
+  if(this.accept(Token.BoolLiteral)) {
+    if(this.acceptedToken.value == "true" || this.acceptedToken.value == "otherwise") {
+      a = true
+    }else {
+      if(this.acceptedToken.value == "false") {
+        a = false
+      }else {
+        throw"Unknown boolean literal: " + acceptedToken.value;
+      }
+    }
+  }else {
+    if(this.accept(Token.GroupOpen)) {
+      a = this.condition();
+      this.expect(Token.GroupClose)
+    }else {
+      if(this.pendingToken.type == Token.Internal && this.pendingToken.value == "output") {
+        a = this.stringComparison()
+      }else {
+        a = this.intExpression();
+        this.expect(Token.OpComparison);
+        var b = this.acceptedToken.value, c = this.intExpression();
+        if(this.operator == ">") {
+          a = a > c
+        }else {
+          if(this.operator == "<") {
+            a = a < c
+          }else {
+            if(this.operator == ">=") {
+              a = a >= c
+            }else {
+              if(this.operator == "<=") {
+                a = a <= c
+              }else {
+                if(this.operator == "==") {
+                  a = a == c
+                }else {
+                  if(b.equals("!=")) {
+                    a = a != c
+                  }else {
+                    throw"Unknown comparison operator: " + b;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.condition = function() {
+  for(var a = this.boolExpression();this.accept(Token.OpLogic);) {
+    if(this.acceptedToken.value == "&&") {
+      a = a && this.boolExpression()
+    }else {
+      if(this.acceptedToken.value == "||") {
+        a = a || this.boolExpression()
+      }else {
+        throw"Unknown boolean operator: " + acceptedToken.value;
+      }
+    }
+  }
+  return a
+};
+Interpreter.prototype.assignment = function(a) {
+  var b;
+  if(this.accept(Token.OpAssign)) {
+    var c = this.acceptedToken.value;
+    b = this.intExpression();
+    if(c == "+=") {
+      b = a + b
+    }else {
+      if(c == "-=") {
+        b = a - b
+      }else {
+        if(c != "=") {
+          throw"Unknown assignment operator: " + acceptedToken.value;
+        }
+      }
+    }
+  }else {
+    if(this.accept(Token.OpIncAssign)) {
+      b = a;
+      if(this.acceptedToken.value == "++") {
+        b++
+      }else {
+        if(this.acceptedToken.value == "--") {
+          b--
+        }else {
+          throw"Unknown increment operator: " + acceptedToken.value;
+        }
+      }
+    }else {
+      throw"Unknown assignment operator: " + pendingToken.value;
+    }
+  }
+  return b
+};
+Interpreter.prototype.statement = function() {
+  var a;
+  if(this.accept(Token.RegisterName)) {
+    var b = this.acceptedToken.value;
+    if(this.validRegister(b)) {
+      a = this.assignment(this.state.getRegister(b));
+      this.state.setRegister(b, a)
+    }else {
+      throw"Unknown register name: " + b;
+    }
+  }else {
+    if(this.accept(Token.DerefOpen)) {
+      b = this.intExpression();
+      this.expect(Token.DerefClose);
+      a = this.assignment(this.state.getMemory(b));
+      this.state.setMemory(b, a)
+    }else {
+      if(this.accept(Token.RegRefOpen)) {
+        a = this.intExpression();
+        this.expect(Token.RegRefClose);
+        if(a < this.state.processor.getNumRegisters()) {
+          b = this.state.processor.getRegisterNames().get(a);
+          a = this.assignment(this.state.getRegister(b));
+          this.state.setRegister(b, a)
+        }
+      }else {
+        if(this.accept(Token.Keyword)) {
+          if(this.acceptedToken.value == "print") {
+            this.expect(Token.GroupOpen);
+            this.argumentValue = this.intExpression();
+            this.expect(Token.GroupClose);
+            this.state.print(a)
+          }else {
+            if(this.acceptedToken.value == "printASCII") {
+              this.expect(Token.GroupOpen);
+              a = this.intExpression();
+              this.expect(Token.GroupClose);
+              this.state.printASCII(a)
+            }else {
+              if(this.acceptedToken.value == "bell") {
+                this.state.ringBell()
+              }else {
+                if(this.acceptedToken.value == "halt") {
+                  this.state.halt()
+                }else {
+                  if(!acceptedToken.value.equals("nop")) {
+                    throw new InterpreterError("Unknown command: " + acceptedToken.value);
+                  }
+                }
+              }
+            }
+          }
+        }else {
+          throw"Unable to parse statement, register name, memory address or command not found.";
+        }
+      }
+    }
+  }
+};
+Interpreter.prototype.interpretStatement = function(a, b, c) {
+  (new Interpreter(a, b, c)).statement()
+};
+Interpreter.prototype.interpretCondition = function(a, b, c) {
+  return(new Interpreter(a, b, c)).condition()
+};
+Interpreter.prototype.interpretExpression = function(a, b, c) {
+  return(new Interpreter(a, b, c)).intExpression()
+};
+function Token(a, b) {
+  this.type = a;
+  this.value = b
+}
+Token.OpAssign = 0;
+Token.OpLogic = 1;
+Token.OpComparison = 2;
+Token.BoolLiteral = 3;
+Token.GroupOpen = 4;
+Token.GroupClose = 5;
+Token.OpTerm = 6;
+Token.OpFactor = 7;
+Token.Integer = 8;
+Token.Keyword = 9;
+Token.RegisterName = 10;
+Token.DerefOpen = 11;
+Token.DerefClose = 12;
+Token.OpIncAssign = 13;
+Token.OpBitwise = 14;
+Token.OpUnary = 15;
+Token.RegRefOpen = 16;
+Token.RegRefClose = 17;
+Token.Hex = 18;
+Token.Internal = 19;
+Token.StringLiteral = 20;
+Token.prototype.typeString = function(a) {
+  return["assignment", "logical operator", "logical comparison", "boolean literal", "open group", "close group", "term operator", "factor operator", "integer", "keyword", "register name", "open dereference", "close dereference", "modifying assignment", "bitwise operator", "unary operator", "register reference open", "register reference close", "hex hash"][a]
+};
+Token.prototype.toString = function() {
+  return"(" + Token.typeString(this.type) + ', "' + this.value + '")'
+};
+Token.prototype.typeToString = function() {
+  return Token.typeString(this.type)
+};
+function Tokeniser() {
+  this.tokens = [];
+  this.position = 0;
+  this.code = ""
+}
+Tokeniser.prototype.addToken = function(a, b) {
+  this.tokens.push(new Token(a, b));
+  this.position += b.length
+};
+Tokeniser.prototype.throwError = function() {
+  throw"unrecognised character at: " + this.code.charAt(this.position);
+};
+Tokeniser.prototype.tokeniseComparison = function() {
+  var a = this.code.substring(position, position + 2), b = this.code.charAt(position);
+  if(a == "<=" || a == ">=" || a == "!=" || a == "==") {
+    this.addToken(Token.OpComparison, a)
+  }else {
+    if(b == "<" || b == ">") {
+      this.addToken(Token.OpComparison, b)
+    }
+  }
+};
+Tokeniser.prototype.tokeniseEqualsSign = function() {
+  var a = this.code.substring(this.position, this.position + 2);
+  a == "==" ? this.addToken(Token.OpComparison, a) : this.addToken(Token.OpAssign, "=")
+};
+Tokeniser.prototype.tokeniseLogicOp = function() {
+  var a = this.code.substring(this.position, this.position + 2), b = this.code.charAt(this.position);
+  a == "&&" || a == "||" ? this.addToken(Token.OpLogic, a) : this.addToken(Token.OpBitwise, b)
+};
+Tokeniser.prototype.tokeniseBitshift = function() {
+  var a = this.code.substring(this.position, this.position + 2);
+  if(a == ">>" || a == "<<") {
+    this.addToken(Token.OpBitwise, a)
+  }else {
+    throw"Unknown operator: " + a;
+  }
+};
+Tokeniser.prototype.tokeniseAddOp = function() {
+  var a = this.code.substr(this.position, this.position + 2), b = this.code.charAt(this.position);
+  if(a == "+=" || a == "-=") {
+    this.addToken(Token.OpAssign, a)
+  }else {
+    a == "++" || a == "--" ? this.addToken(Token.OpIncAssign, a) : this.addToken(Token.OpTerm, b)
+  }
+};
+Tokeniser.prototype.isDigit = function(a) {
+  return a >= "0" && a <= "9"
+};
+Tokeniser.prototype.isHexDigit = function(a) {
+  return isDigit(a) || a >= "A" && a <= "F"
+};
+Tokeniser.prototype.isLetter = function(a) {
+  return a == "_" || a >= "a" && a <= "z" || a >= "A" && a <= "Z"
+};
+Tokeniser.prototype.isAlphanumeric = function(a) {
+  return isDigit(a) || isLetter(a)
+};
+Tokeniser.prototype.tokeniseInteger = function() {
+  for(var a = "", b = this.position;b < this.code.length && isDigit(this.code.charAt(b));) {
+    a += this.code.charAt(b);
+    b++
+  }
+  this.addToken(Token.Integer, a)
+};
+Tokeniser.prototype.tokeniseHex = function() {
+  var a = "";
+  this.position++;
+  for(var b = this.position;b < this.code.length && isHexDigit(this.code.charAt(b));) {
+    a += this.code.charAt(b);
+    b++
+  }
+  this.addToken(Token.Hex, a)
+};
+Tokeniser.prototype.tokeniseStringLiteral = function() {
+  var a = this.position, b = "";
+  for(a++;a < this.code.length && this.code.charAt(a) != '"';) {
+    b += this.code.charAt(a);
+    a++
+  }
+  this.addToken(Token.StringLiteral, b);
+  this.position += 2
+};
+Tokeniser.prototype.tokeniseKeyword = function() {
+  for(var a = "", b = this.position;b < this.code.length && isAlphanumeric(this.code.charAt(b));) {
+    a += this.code.charAt(b);
+    b++
+  }
+  b = ["print", "printASCII", "bell", "halt", "nop"];
+  var c = ["numBellRings", "output", "numCycles"];
+  if(["true", "false", "otherwise"].contains(a)) {
+    this.addToken(Token.BoolLiteral, a)
+  }else {
+    if(b.contains(a)) {
+      this.addToken(Token.Keyword, a)
+    }else {
+      c.contains(a) ? this.addToken(Token.Internal, a) : this.addToken(Token.RegisterName, a)
+    }
+  }
+};
+Tokeniser.prototype.tokenise = function(a) {
+  this.code = a;
+  tokens = [];
+  for(this.position = 0;this.position != this.code.length;) {
+    a = this.code.charAt(position);
+    switch(a) {
+      case "(":
+        this.addToken(Token.GroupOpen, a);
+        break;
+      case ")":
+        this.addToken(Token.GroupClose, a);
+        break;
+      case "[":
+        this.addToken(Token.DerefOpen, a);
+        break;
+      case "]":
+        this.addToken(Token.DerefClose, a);
+        break;
+      case "{":
+        this.addToken(Token.RegRefOpen, a);
+        break;
+      case "}":
+        this.addToken(Token.RegRefClose, a);
+        break;
+      case "*":
+      ;
+      case "/":
+      ;
+      case "%":
+        this.addToken(Token.OpFactor, a);
+        break;
+      case "~":
+        this.addToken(Token.OpUnary, a);
+        break;
+      case "+":
+      ;
+      case "-":
+        this.tokeniseAddOp();
+        break;
+      case "<":
+      ;
+      case ">":
+      ;
+      case "!":
+        this.code.charAt(this.position + 1) == a ? this.tokeniseBitshift() : this.tokeniseComparison();
+        break;
+      case "=":
+        this.tokeniseEqualsSign();
+        break;
+      case "#":
+        this.tokeniseHex();
+        break;
+      case "&":
+      ;
+      case "|":
+      ;
+      case "^":
+        this.tokeniseLogicOp();
+        break;
+      case '"':
+        this.tokeniseStringLiteral();
+        break;
+      default:
+        if(this.isDigit(a)) {
+          this.tokeniseInteger()
+        }else {
+          isLetter(a) ? this.tokeniseKeyword() : this.throwError()
+        }
+    }
+  }
+  return tokens
+};
 var stdin = process.openStdin(), app = new AppletRunner, memaddloc = 0;
 console.log("Welcome to the " + app.processor.name + " Emulator");
 console.log('enter "help" for more infomation');

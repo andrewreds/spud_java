@@ -1,3 +1,180 @@
+function InterpretedProcessor( definition ) {
+	//super()
+	this.__proto__.__proto__.constructor();
+	
+	this.updateDefinition( definition );
+}
+
+InterpretedProcessor.prototype = new FetchIncExecProcessor;
+
+
+InterpretedProcessor.prototype.removeWhitespace = function ( code ) {
+	// replace one or more whitespace chars with a nothing
+	return code.replace( /\s/g, "" );
+}
+
+InterpretedProcessor.prototype.trim = function ( str ) {
+	return str.replace(/^\s+|\s+$/g,"");
+}
+
+InterpretedProcessor.prototype.isTitleLine = function ( line ) {
+	return ( this.trim( line ) != "" && this.trim( line ).charAt( 0 ) == '[');
+}
+
+InterpretedProcessor.prototype.addLineToDict = function ( dict, line ) {
+	//trace( " InterpretedProcessor.addLineToDict" );
+	//trace( "  trimmed line: " + trim( line ) );
+	if ( this.trim( line ) != "" ) {
+		
+		var property = line.split( ":" );
+		var key = this.trim( property[0] );
+		
+		property = property.substr( 1, property.length );
+		var value = trim( Strings.join( property, ":" ) ); // TODO
+		
+		//trace( "  key: " + key + ", value: " + value );
+
+		dict[key] = value;
+	}
+}
+
+InterpretedProcessor.prototype.isDigit = function ( c ) {
+	return ( c >= '0' && c <= '9' );
+}
+
+InterpretedProcessor.prototype.extractHeader = function ( code ) {
+	var header = [];
+	var i;
+	var start, end;
+
+	i = 0;
+	start = i;
+	while ( i != code.length && code.charAt( i ) != Interpreter.instructionPartSeparator ) {
+		i++;
+	}
+	
+	end = i;
+	header.push( code.substring( start, end )*1 );
+	
+	i++; // skip separator char
+	start = i;
+	while ( i != code.length && this.isDigit( code.charAt( i ) ) ) {
+		i++;
+	}
+	
+	end = i;
+	header.push( code.substring( start, end )*1 );
+	
+	return header;
+}
+
+InterpretedProcessor.prototype.extractCodeSection = function ( code ) {
+	var codeStart;
+	for ( codeStart = 0; codeStart != code.length; codeStart++ ) {
+		// or detect case statement
+		if ( code.charAt( codeStart ) == Interpreter.conditionTerminator
+			|| code.substr( codeStart, codeStart + Interpreter.guardKeyword.length ) == Interpreter.guardKeyword ) {
+			break;
+		}
+	}
+	return code.substring( codeStart, code.length );
+}
+
+
+InterpretedProcessor.prototype.addInstructionCode = function ( code, descriptions ) {
+	var instrNumStr;
+	var instrNum;
+	var ipInc;
+	var instrCode;
+	
+	var headerParts = this.extractHeader( code );
+	instrNum = headerParts[0];
+	instrNumStr = instrNum+'';
+	ipInc = headerParts[1];
+	
+	instrCode = this.extractCodeSection( code );
+	
+	//trace( "[InterpretedProcessor.addInstructionCode] code: " + code );
+	//trace( "[InterpretedProcessor.addInstructionCode] instrNumStr: " + instrNumStr );
+	//trace( "[InterpretedProcessor.addInstructionCode] ipInc: " + ipInc );
+	//trace( "[InterpretedProcessor.addInstructionCode] instrCode: " + instrCode );
+	
+	// because java won't let you set past the end of an arraylist
+	//while (this.instructions.size() <= instrNum) {
+	//	this.instructions.add(null);
+	//}
+	this.instructions[instrNum] = new InterpretedInstruction( descriptions[instrNumStr], ipInc, instrCode );
+}
+
+InterpretedProcessor.prototype.updateDefinition = function ( definition ) {
+	
+	var properties = {};
+	var descriptions = {};
+	
+	this.instructions = [];
+	
+	var lines =  definition.split( "\n" );
+	var lineNum = 0;
+	
+	while ( !this.isTitleLine( lines[lineNum] ) ) {
+		// up until next [ ] heading
+		
+		this.addLineToDict( properties, lines[lineNum] );
+		
+		lineNum++;
+	}
+	// {{ lines[lineNum] starts with '[' }}
+	
+	this.name = properties["name"];
+	this.memoryBitSize = properties["memoryBitSize"]*1;
+	this.numMemoryAddresses = properties["numMemoryAddresses"]*1;
+	this.registerBitSize = properties["registerBitSize"]*1;
+	
+	var registerNames = [];
+	
+	for ( var regName in properties["registerNames"].split( "," ) ) {
+		registerNames.push( this.trim( regName ) ); // order is important
+	}
+	
+	this.setRegisterNames(registerNames); // setter does verification
+	
+	// grab instruction descriptions
+	if ( this.trim( lines[lineNum] ) == "[descriptions]" ) {
+		lineNum++;
+		
+		while ( !this.isTitleLine( lines[lineNum]) ) {
+		// up until next [ ] heading
+		
+			this.addLineToDict( descriptions, lines[lineNum] );
+		
+			lineNum++;
+		}
+		
+	} else {
+		throw "Descriptions must be listed before instructions.";
+	}
+	
+	var code;
+	if ( this.trim( lines[lineNum] ) == "[instructions]" ) {
+		lineNum++;
+		
+		// code = all following lines without newlines
+		// remove all text before start of instructions
+		code = lines.slice( lineNum, lines.length ).join();
+		code = this.removeWhitespace( code );
+	} else {
+		throw "No Instruction Set Defined";
+	}
+	
+	// splits each instruction definition
+	var instructionCodes = code.split( "\\." );
+	for ( var instructionCode in instructionCodes ) {
+		if ( instructionCode != "" ) {
+			this.addInstructionCode( instructionCode, descriptions );
+		}
+	}   
+}
+
 /*package emulator.interpreter;
 
 import emulator.*;
@@ -100,12 +277,12 @@ public class InterpretedProcessor extends FetchIncExecProcessor {
         ipInc = headerParts.get(1);
         
         instrCode = extractCodeSection( code );
-        /*
-        trace( "[InterpretedProcessor.addInstructionCode] code: " + code );
-        trace( "[InterpretedProcessor.addInstructionCode] instrNumStr: " + instrNumStr );
-        trace( "[InterpretedProcessor.addInstructionCode] ipInc: " + ipInc );
-        trace( "[InterpretedProcessor.addInstructionCode] instrCode: " + instrCode );
-        */
+        
+        //trace( "[InterpretedProcessor.addInstructionCode] code: " + code );
+        //trace( "[InterpretedProcessor.addInstructionCode] instrNumStr: " + instrNumStr );
+        //trace( "[InterpretedProcessor.addInstructionCode] ipInc: " + ipInc );
+        //trace( "[InterpretedProcessor.addInstructionCode] instrCode: " + instrCode );
+        
         // because java won't let you set past the end of an arraylist
         while (this.instructions.size() <= instrNum) {
         	this.instructions.add(null);
