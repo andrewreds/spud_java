@@ -2,13 +2,6 @@ function Interpreter ( tokens, state, where ) {
 	this.state = state;
 	this.tokens = tokens;
 	this.where = where;
-	
-	this.guardKeyword  = "case";
-	this.helperKeyword = "where";
-	this.pretestKeyword = "whenever";
-	this.statementSeparator = ";";
-	this.conditionTerminator = ':';
-	this.instructionPartSeparator = ',';
 
 	this.acceptedToken = null;
 	this.pendingToken = null;
@@ -21,10 +14,17 @@ function Interpreter ( tokens, state, where ) {
 	this.getToken( );
 }
 
+Interpreter.guardKeyword  = "case";
+Interpreter.helperKeyword = "where";
+Interpreter.pretestKeyword = "whenever";
+Interpreter.statementSeparator = ";";
+Interpreter.conditionTerminator = ':';
+Interpreter.instructionPartSeparator = ',';
+
 
 Interpreter.prototype.getToken = function () {
-	if ( this.tokenPos != tokens.length ) {
-		this.pendingToken = this.tokens[tokenPos];
+	if ( this.tokenPos != this.tokens.length ) {
+		this.pendingToken = this.tokens[this.tokenPos];
 		this.tokenPos++;
 	} else {
 		this.pendingToken = null;
@@ -76,7 +76,7 @@ Interpreter.prototype.bitExpression = function () {
 		} else if ( this.acceptedToken.value == "<<" ) {
 			value <<= this.addExpression( );
 		} else {
-			throw "Unknown bitwise operator: " + acceptedToken.value;
+			throw "Unknown bitwise operator: " + this.acceptedToken.value;
 		}
 	}
 	
@@ -91,7 +91,7 @@ Interpreter.prototype.addExpression = function () {
 		} else if ( this.acceptedToken.value == "-" ) {
 			value -= this.mulExpression( );
 		} else {
-			throw "Unknown additive operator: " + acceptedToken.value;
+			throw "Unknown additive operator: " + this.acceptedToken.value;
 		}
 	}
 	
@@ -101,7 +101,7 @@ Interpreter.prototype.addExpression = function () {
 Interpreter.prototype.mulExpression = function () {
 	var value = this.unaryExpression();
 	
-	while ( accept( Token.OpFactor ) ) {
+	while ( this.accept( Token.OpFactor ) ) {
 		if ( this.acceptedToken.value == "*" ) {
 			value *= this.unaryExpression( );
 		} else if ( this.acceptedToken.value == "/" ) {
@@ -109,7 +109,7 @@ Interpreter.prototype.mulExpression = function () {
 		} else if ( this.acceptedToken.value == "%" ) {
 			value %= this.unaryExpression( );
 		} else {
-			throw "Unknown multiplicative operator: " + acceptedToken.value;
+			throw "Unknown multiplicative operator: " + this.acceptedToken.value;
 		}
 	}
 	
@@ -125,7 +125,7 @@ Interpreter.prototype.unaryExpression = function () {
 		if ( this.acceptedToken.value == "~" ) {
 			value = ~value;
 		} else {
-			throw "Unknown unary operator: " + acceptedToken.value;
+			throw "Unknown unary operator: " + this.acceptedToken.value;
 		}
 	}
 	
@@ -216,7 +216,7 @@ Interpreter.prototype.stringComparison = function () {
 		this.expect( Token.Internal );
 	
 		if ( this.acceptedToken.value != "output" ) {
-			throw "Unknown internal string identifier: " + acceptedToken.value;
+			throw "Unknown internal string identifier: " + this.acceptedToken.value;
 		} 
 	
 		this.expect( Token.OpComparison );
@@ -224,15 +224,15 @@ Interpreter.prototype.stringComparison = function () {
 		if ( this.acceptedToken.value == "==" ) {
 			this.expect( Token.StringLiteral );
 			
-			value = ( this.state.output == acceptedToken.value );
+			value = ( this.state.output == this.acceptedToken.value );
 			
 		} else if ( this.acceptedToken.value == "!=" ) {
 			this.expect( Token.StringLiteral );
 			
-			value = ( this.state.output != acceptedToken.value );
+			value = ( this.state.output != this.acceptedToken.value );
 			
 		} else {
-			throw "Unknown string comparison operator: " + acceptedToken.value;
+			throw "Unknown string comparison operator: " + this.acceptedToken.value;
 		}
 	} else {
 		throw "Internal information inaccessible.";
@@ -250,7 +250,7 @@ Interpreter.prototype.boolExpression = function () {
 		} else if ( this.acceptedToken.value == "false" ) {
 				value = false;
 		} else {
-			throw "Unknown boolean literal: " + acceptedToken.value;
+			throw "Unknown boolean literal: " + this.acceptedToken.value;
 		}
 	} else if ( this.accept( Token.GroupOpen ) ) {
 		
@@ -295,7 +295,7 @@ Interpreter.prototype.condition = function ( ) {
 		} else if ( this.acceptedToken.value == "||" ) {
 			value = value || this.boolExpression( );
 		} else {
-			throw "Unknown boolean operator: " + acceptedToken.value;
+			throw "Unknown boolean operator: " + this.acceptedToken.value;
 		}
 	}
 
@@ -323,7 +323,7 @@ Interpreter.prototype.assignment = function ( oldValue ) {
 		} else if ( tokenValue == "=" ) {
 			// new value already set
 		} else {
-			throw "Unknown assignment operator: " + acceptedToken.value;
+			throw "Unknown assignment operator: " + this.acceptedToken.value;
 		}
 		
 	} else if ( this.accept( Token.OpIncAssign ) ) {
@@ -335,7 +335,7 @@ Interpreter.prototype.assignment = function ( oldValue ) {
 		} else if ( this.acceptedToken.value == "--" ) {
 			newValue--;
 		} else {
-			throw "Unknown increment operator: " + acceptedToken.value;
+			throw "Unknown increment operator: " + this.acceptedToken.value;
 		}
 		
 	} else {
@@ -408,10 +408,10 @@ Interpreter.prototype.statement = function () {
 				this.state.ringBell();
 			} else if ( this.acceptedToken.value == "halt" ) {
 				this.state.halt();    
-			} else if ( acceptedToken.value.equals( "nop" ) ) {
+			} else if ( this.acceptedToken.value == "nop" ) {
 				// twiddle thumbs    
 			} else {
-				throw new InterpreterError( "Unknown command: " + acceptedToken.value );
+				throw new InterpreterError( "Unknown command: " + this.acceptedToken.value );
 			}
 	} else {
 		throw "Unable to parse statement, register name, memory address or command not found.";

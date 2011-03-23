@@ -1,7 +1,9 @@
 function InterpretedInstruction (description, ipIncrement, code) {
 	//super(description, ipIncrement)
-	this.__proto__.__proto__.constructor(description, ipIncrement);
-
+	//this.__proto__.__proto__.constructor(description, ipIncrement);
+	this.description = description;
+	this.ipIncrement = ipIncrement;
+	
 	this.tokeniser = new Tokeniser();
 	this.conditions = [];
 	
@@ -19,18 +21,19 @@ InterpretedInstruction.prototype.removeWhitespace = function ( code ) {
 InterpretedInstruction.prototype.addCondition = function ( conditionCode, statements, continuation ) {
 	
 	var condition = this.tokeniser.tokenise( conditionCode );
-	var tokenisedStatements = new [];
+	var tokenisedStatements = [];
 	
 	//trace( conditionCode );
 	//trace( statements );
 	
-	for ( var statement in statements.split( Interpreter.statementSeparator ) ) {
-		tokenisedStatements.push ( tokeniser.tokenise( statement ) );
+	var splitStatements = statements.split( Interpreter.statementSeparator )
+	for ( var statement in splitStatements ) {
+		tokenisedStatements.push ( this.tokeniser.tokenise( splitStatements[statement] ) );
 	}
 	
 	//trace( "[addCondition] tokenised as: " );
 	//trace( tokenisedStatements );
-	conditions.push( new Condition (condition, tokenisedStatements, continuation) );
+	this.conditions.push( new Condition (condition, tokenisedStatements, continuation) );
 }
 
 InterpretedInstruction.prototype.updateCode = function ( code ) {
@@ -77,9 +80,9 @@ InterpretedInstruction.prototype.updateCode = function ( code ) {
 		this.where = {};
 		for ( var whereStatement in whereStatements ) {
 			
-			if ( whereStatement.length > 0 ) {
+			if ( whereStatements[whereStatement].length > 0 ) {
 				
-				var statementParts = whereStatement.split( "=" );
+				var statementParts = whereStatements[whereStatement].split( "=" );
 			
 				// TODO:
 				//InterpreterError.assert_( statementParts.size() == 2, "assignment required" );
@@ -129,28 +132,29 @@ InterpretedInstruction.prototype.updateCode = function ( code ) {
 
 InterpretedInstruction.prototype.execute = function ( state ) {
 	for ( var condition in this.conditions ) {
-		try {
-			var conditionValue = Interpreter.interpretCondition( condition.condition, state, this.where );
+		//try {
+			var conditionValue = Interpreter.prototype.interpretCondition( this.conditions[condition].condition, state, this.where );
 
 			if ( conditionValue ) {
 				
 				//trace( "EXECUTING: " + conditionObj['statements'] );
-				for ( var statement in condition.statements ) {
+				var statements = this.conditions[condition].statements
+				for ( var statement in  statements) {
 
 					//trace( "  * " + statement );
-					Interpreter.interpretStatement( statement, state, this.where );
+					Interpreter.prototype.interpretStatement( statements[statement], state, this.where );
 				}
 				
 				// escape after a true condition
-				if ( !condition.continuation ) {
+				if ( !this.conditions[condition].continuation ) {
 					break;
 				}
 			}
-		} catch ( interpreterError ) {
+		//} catch ( interpreterError ) {
 			// TODO:
-			console.log("Error (InterpretedInstruction.java)" + interpreterError);
+		//	console.log("Error (InterpretedInstruction.java)" + interpreterError);
 			//Alert.show( "Parsing Error: " + interpreterError.message );
-		}
+		//}
 	}
 }
 

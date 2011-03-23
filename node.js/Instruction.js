@@ -8,11 +8,11 @@ Instruction.prototype.execute = function ( state ) {
 }
 
 Instruction.prototype.getDescription = function () {
-	return description;
+	return this.description;
 }
 
 Instruction.prototype.getBytes = function () {
-	return ipIncrement;
+	return this.ipIncrement;
 }
 
 /*package emulator;

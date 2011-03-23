@@ -84,7 +84,7 @@ Tokeniser.prototype.isDigit = function ( c ) {
 }
 
 Tokeniser.prototype.isHexDigit = function ( c ) {
-	return ( isDigit( c ) || ( c >= 'A' && c <= 'F' ) );
+	return ( this.isDigit( c ) || ( c >= 'A' && c <= 'F' ) );
 }
 
 Tokeniser.prototype.isLetter = function ( c ) {
@@ -94,14 +94,14 @@ Tokeniser.prototype.isLetter = function ( c ) {
 }
 
 Tokeniser.prototype.isAlphanumeric = function ( c ) {
-	return (isDigit( c ) || isLetter( c ));
+	return (this.isDigit( c ) || this.isLetter( c ));
 }
 
 
 Tokeniser.prototype.tokeniseInteger = function () {
 	var digitStr = "";
 	var i = this.position;
-	while ( i < this.code.length && isDigit( this.code.charAt( i ) ) ) {
+	while ( i < this.code.length && this.isDigit( this.code.charAt( i ) ) ) {
 		digitStr += this.code.charAt( i );
 		i++;
 	}
@@ -113,7 +113,7 @@ Tokeniser.prototype.tokeniseHex = function () {
 	var digitStr = "";
 	this.position++; // ignore leading #
 	var i = this.position;
-	while ( i < this.code.length && isHexDigit( this.code.charAt( i ) ) ) {
+	while ( i < this.code.length && this.isHexDigit( this.code.charAt( i ) ) ) {
 		digitStr += this.code.charAt( i );
 		i++;
 	}
@@ -140,33 +140,33 @@ Tokeniser.prototype.tokeniseStringLiteral = function () {
 Tokeniser.prototype.tokeniseKeyword = function () {
 	var keywordStr = "";
 	var i = this.position;
-	while ( i < this.code.length && isAlphanumeric( this.code.charAt( i ) ) ) {
+	while ( i < this.code.length && this.isAlphanumeric( this.code.charAt( i ) ) ) {
 		keywordStr += this.code.charAt( i );
 		i++;
 	} 
 
-	var booleanLiterals = [
-			"true",
-			"false",
-			"otherwise"];
+	var booleanLiterals = {
+			"true":1,
+			"false":2,
+			"otherwise":3};
 	
-	var commands = [
-		"print",
-		"printASCII",
-		"bell",
-		"halt",
-		"nop"];
+	var commands = {
+		"print":1,
+		"printASCII":2,
+		"bell":3,
+		"halt":4,
+		"nop":5};
 	
-	var internalKeywords = [
-		"numBellRings",
-		"output",
-		"numCycles"];
+	var internalKeywords = {
+		"numBellRings":1,
+		"output":2,
+		"numCycles":3};
 	
-	if ( booleanLiterals.contains( keywordStr ) ) {
+	if ( booleanLiterals[keywordStr] != undefined ) {
 		this.addToken( Token.BoolLiteral, keywordStr );
-	} else if ( commands.contains( keywordStr ) ) {
+	} else if ( commands[keywordStr] != undefined ) {
 		this.addToken( Token.Keyword, keywordStr );
-	} else if ( internalKeywords.contains( keywordStr ) ) {
+	} else if ( internalKeywords[keywordStr] != undefined ) {
 		this.addToken( Token.Internal, keywordStr );
 	} else {
 		this.addToken( Token.RegisterName, keywordStr );        
@@ -176,13 +176,13 @@ Tokeniser.prototype.tokeniseKeyword = function () {
 Tokeniser.prototype.tokenise = function ( code ) {
 	this.code = code;
 	
-	tokens = [];
+	this.tokens = [];
 	
 	var c;
 	
 	this.position = 0;
 	while ( this.position != this.code.length ) {
-		c = this.code.charAt( position );
+		c = this.code.charAt( this.position );
 		
 		switch ( c ) {
 			case '(': {
@@ -256,7 +256,7 @@ Tokeniser.prototype.tokenise = function ( code ) {
 			default: {
 				if ( this.isDigit( c ) ) {
 					this.tokeniseInteger();
-				} else if ( isLetter( c ) ) {
+				} else if ( this.isLetter( c ) ) {
 					this.tokeniseKeyword();
 				} else {
 					this.throwError();
@@ -265,7 +265,7 @@ Tokeniser.prototype.tokenise = function ( code ) {
 		}    
 	}
 	
-	return tokens;
+	return this.tokens;
 }    
 
 /*package emulator.interpreter;

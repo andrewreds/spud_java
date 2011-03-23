@@ -25,12 +25,18 @@ InterpretedProcessor.prototype.addLineToDict = function ( dict, line ) {
 	//trace( " InterpretedProcessor.addLineToDict" );
 	//trace( "  trimmed line: " + trim( line ) );
 	if ( this.trim( line ) != "" ) {
-		
+	
+            //ArrayList<String> property = new ArrayList<String>( Arrays.asList( line.split( ":" ) ) );
+            //String key = trim( property.get(0) );
+            
+            //property = new ArrayList<String>( property.subList( 1, property.size() ) );
+            //String value = trim( Strings.join( property, ":" ) ); // TODO
+			
 		var property = line.split( ":" );
 		var key = this.trim( property[0] );
 		
-		property = property.substr( 1, property.length );
-		var value = trim( Strings.join( property, ":" ) ); // TODO
+		property = property.slice( 1, property.length );
+		var value = this.trim( property.join( ":" ) ); // TODO
 		
 		//trace( "  key: " + key + ", value: " + value );
 
@@ -47,6 +53,9 @@ InterpretedProcessor.prototype.extractHeader = function ( code ) {
 	var i;
 	var start, end;
 
+	if (code.charAt (0) == Interpreter.instructionPartSeparator) {
+		code = code.substr (1, code.lenght);
+	}
 	i = 0;
 	start = i;
 	while ( i != code.length && code.charAt( i ) != Interpreter.instructionPartSeparator ) {
@@ -54,7 +63,7 @@ InterpretedProcessor.prototype.extractHeader = function ( code ) {
 	}
 	
 	end = i;
-	header.push( code.substring( start, end )*1 );
+	header.push( code.substr( start, end )*1 );
 	
 	i++; // skip separator char
 	start = i;
@@ -132,8 +141,9 @@ InterpretedProcessor.prototype.updateDefinition = function ( definition ) {
 	
 	var registerNames = [];
 	
-	for ( var regName in properties["registerNames"].split( "," ) ) {
-		registerNames.push( this.trim( regName ) ); // order is important
+	var regLoop = properties["registerNames"].split( "," );
+	for ( var regNum in regLoop) {
+		registerNames.push( this.trim( regLoop[regNum] ) ); // order is important
 	}
 	
 	this.setRegisterNames(registerNames); // setter does verification
@@ -167,10 +177,10 @@ InterpretedProcessor.prototype.updateDefinition = function ( definition ) {
 	}
 	
 	// splits each instruction definition
-	var instructionCodes = code.split( "\\." );
+	var instructionCodes = code.split( "." );
 	for ( var instructionCode in instructionCodes ) {
-		if ( instructionCode != "" ) {
-			this.addInstructionCode( instructionCode, descriptions );
+		if ( instructionCodes[instructionCode] != "" ) {
+			this.addInstructionCode( instructionCodes[instructionCode], descriptions );
 		}
 	}   
 }

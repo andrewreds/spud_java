@@ -1,5 +1,46 @@
 function AppletRunner ( ) {
-	this.processor = new Processor4917 ( );
+	//this.processor = new Processor4917 ( );
+	this.processor = new InterpretedProcessor ('name: 4004\n'+
+'memoryBitSize: 4\n'+
+'numMemoryAddresses: 16\n'+
+'registerBitSize: 4\n'+
+'registerNames: IP, IS, R0, R1, SW\n'+
+'\n'+
+'[descriptions]\n'+
+'0: Halt\n'+
+'1: Increment R0 (R0 = R0 + 1)\n'+
+'2: Decrement R0 (R0 = R0 - 1)\n'+
+'3: Increment R1 (R1 = R1 + 1)\n'+
+'4: Decrement R1 (R1 = R1 - 1)\n'+
+'5: Add (R0 = R0 + R1)\n'+
+'6: Subtract (R0 = R0 - R1)\n'+
+'7: Print R0\n'+
+'8: Jump to address <data> if R0 != 0\n'+
+'9: Jump to address <data> if R0 == 0\n'+
+'10: Load <data> in to R0\n'+
+'11: Load <data> in to R1\n'+
+'12: Store R0 into address <data>\n'+
+'13: Store R1 into address <data>\n'+
+'14: Swap R0 and address <data>\n'+
+'15: Swap R1 and address <data>\n'+
+'\n'+
+'[instructions]\n'+
+'0, 1: halt.\n'+
+'1, 1: R0++.\n'+
+'2, 1: R0--.\n'+
+'3, 1: R1++.\n'+
+'4, 1: R1--.\n'+
+'5, 1: R0 = R0 + R1.\n'+
+'6, 1: R0 = R0 - R1.\n'+
+'7, 1: print(R0).\n'+
+'8, 2 case R0 != 0: IP = [IP-1].\n'+
+'9, 2 case R0 == 0: IP = [IP-1].\n'+
+'10, 2: R0 = [IP-1].\n'+
+'11, 2: R1 = [IP-1].\n'+
+'12, 2: [[IP-1]] = R0.\n'+
+'13, 2: [[IP-1]] = R1.\n'+
+'14, 2: SW = [[IP-1]]; [[IP-1]] = R0; R0 = SW.\n'+
+'15, 2: SW = [[IP-1]]; [[IP-1]] = R1; R1 = SW.\n');
 	this.state = new State ( this.processor );
 	this.emulator = new Emulator ( );
 }

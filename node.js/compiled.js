@@ -28,10 +28,10 @@ function Instruction(a, b) {
 Instruction.prototype.execute = function() {
 };
 Instruction.prototype.getDescription = function() {
-  return description
+  return this.description
 };
 Instruction.prototype.getBytes = function() {
-  return ipIncrement
+  return this.ipIncrement
 };
 function Processor() {
   this.setRegisterNames(["IP", "IS"])
@@ -389,7 +389,7 @@ function InstructionJumpIfR0not0(a) {
   }
 }
 ;function AppletRunner() {
-  this.processor = new Processor4917;
+  this.processor = new InterpretedProcessor("name: 4004\nmemoryBitSize: 4\nnumMemoryAddresses: 16\nregisterBitSize: 4\nregisterNames: IP, IS, R0, R1, SW\n\n[descriptions]\n0: Halt\n1: Increment R0 (R0 = R0 + 1)\n2: Decrement R0 (R0 = R0 - 1)\n3: Increment R1 (R1 = R1 + 1)\n4: Decrement R1 (R1 = R1 - 1)\n5: Add (R0 = R0 + R1)\n6: Subtract (R0 = R0 - R1)\n7: Print R0\n8: Jump to address <data> if R0 != 0\n9: Jump to address <data> if R0 == 0\n10: Load <data> in to R0\n11: Load <data> in to R1\n12: Store R0 into address <data>\n13: Store R1 into address <data>\n14: Swap R0 and address <data>\n15: Swap R1 and address <data>\n\n[instructions]\n0, 1: halt.\n1, 1: R0++.\n2, 1: R0--.\n3, 1: R1++.\n4, 1: R1--.\n5, 1: R0 = R0 + R1.\n6, 1: R0 = R0 - R1.\n7, 1: print(R0).\n8, 2 case R0 != 0: IP = [IP-1].\n9, 2 case R0 == 0: IP = [IP-1].\n10, 2: R0 = [IP-1].\n11, 2: R1 = [IP-1].\n12, 2: [[IP-1]] = R0.\n13, 2: [[IP-1]] = R1.\n14, 2: SW = [[IP-1]]; [[IP-1]] = R0; R0 = SW.\n15, 2: SW = [[IP-1]]; [[IP-1]] = R1; R1 = SW.\n");
   this.state = new State(this.processor);
   this.emulator = new Emulator
 }
@@ -437,7 +437,8 @@ function Condition(a, b, c) {
   this.continuation = c
 }
 ;function InterpretedInstruction(a, b, c) {
-  this.__proto__.__proto__.constructor(a, b);
+  this.description = a;
+  this.ipIncrement = b;
   this.tokeniser = new Tokeniser;
   this.conditions = [];
   this.updateCode(c)
@@ -448,11 +449,12 @@ InterpretedInstruction.prototype.removeWhitespace = function(a) {
 };
 InterpretedInstruction.prototype.addCondition = function(a, b, c) {
   a = this.tokeniser.tokenise(a);
-  var d = new [], e;
-  for(e in b.split(Interpreter.statementSeparator)) {
-    d.push(tokeniser.tokenise(e))
+  var d = [];
+  b = b.split(Interpreter.statementSeparator);
+  for(var e in b) {
+    d.push(this.tokeniser.tokenise(b[e]))
   }
-  conditions.push(new Condition(a, d, c))
+  this.conditions.push(new Condition(a, d, c))
 };
 InterpretedInstruction.prototype.updateCode = function(a) {
   a = this.removeWhitespace(a);
@@ -470,8 +472,8 @@ InterpretedInstruction.prototype.updateCode = function(a) {
     c = c[1].split(Interpreter.statementSeparator);
     this.where = {};
     for(var d in c) {
-      if(d.length > 0) {
-        var e = d.split("=");
+      if(c[d].length > 0) {
+        var e = c[d].split("=");
         this.where.push(e[0], this.tokeniser.tokenise(e[1]))
       }
     }
@@ -497,17 +499,14 @@ InterpretedInstruction.prototype.updateCode = function(a) {
 };
 InterpretedInstruction.prototype.execute = function(a) {
   for(var b in this.conditions) {
-    try {
-      if(Interpreter.interpretCondition(b.condition, a, this.where)) {
-        for(var c in b.statements) {
-          Interpreter.interpretStatement(c, a, this.where)
-        }
-        if(!b.continuation) {
-          break
-        }
+    if(Interpreter.prototype.interpretCondition(this.conditions[b].condition, a, this.where)) {
+      var c = this.conditions[b].statements, d;
+      for(d in c) {
+        Interpreter.prototype.interpretStatement(c[d], a, this.where)
       }
-    }catch(d) {
-      console.log("Error (InterpretedInstruction.java)" + d)
+      if(!this.conditions[b].continuation) {
+        break
+      }
     }
   }
 };
@@ -515,20 +514,20 @@ function Interpreter(a, b, c) {
   this.state = b;
   this.tokens = a;
   this.where = c;
-  this.guardKeyword = "case";
-  this.helperKeyword = "where";
-  this.pretestKeyword = "whenever";
-  this.statementSeparator = ";";
-  this.conditionTerminator = ":";
-  this.instructionPartSeparator = ",";
   this.pendingToken = this.acceptedToken = null;
   this.tokenPos = 0;
   this.internalAccessible = false;
   this.getToken()
 }
+Interpreter.guardKeyword = "case";
+Interpreter.helperKeyword = "where";
+Interpreter.pretestKeyword = "whenever";
+Interpreter.statementSeparator = ";";
+Interpreter.conditionTerminator = ":";
+Interpreter.instructionPartSeparator = ",";
 Interpreter.prototype.getToken = function() {
-  if(this.tokenPos != tokens.length) {
-    this.pendingToken = this.tokens[tokenPos];
+  if(this.tokenPos != this.tokens.length) {
+    this.pendingToken = this.tokens[this.tokenPos];
     this.tokenPos++
   }else {
     this.pendingToken = null
@@ -568,7 +567,7 @@ Interpreter.prototype.bitExpression = function() {
             if(this.acceptedToken.value == "<<") {
               a <<= this.addExpression()
             }else {
-              throw"Unknown bitwise operator: " + acceptedToken.value;
+              throw"Unknown bitwise operator: " + this.acceptedToken.value;
             }
           }
         }
@@ -585,14 +584,14 @@ Interpreter.prototype.addExpression = function() {
       if(this.acceptedToken.value == "-") {
         a -= this.mulExpression()
       }else {
-        throw"Unknown additive operator: " + acceptedToken.value;
+        throw"Unknown additive operator: " + this.acceptedToken.value;
       }
     }
   }
   return a
 };
 Interpreter.prototype.mulExpression = function() {
-  for(var a = this.unaryExpression();accept(Token.OpFactor);) {
+  for(var a = this.unaryExpression();this.accept(Token.OpFactor);) {
     if(this.acceptedToken.value == "*") {
       a *= this.unaryExpression()
     }else {
@@ -602,7 +601,7 @@ Interpreter.prototype.mulExpression = function() {
         if(this.acceptedToken.value == "%") {
           a %= this.unaryExpression()
         }else {
-          throw"Unknown multiplicative operator: " + acceptedToken.value;
+          throw"Unknown multiplicative operator: " + this.acceptedToken.value;
         }
       }
     }
@@ -615,7 +614,7 @@ Interpreter.prototype.unaryExpression = function() {
     if(this.acceptedToken.value == "~") {
       b = ~b
     }else {
-      throw"Unknown unary operator: " + acceptedToken.value;
+      throw"Unknown unary operator: " + this.acceptedToken.value;
     }
   }
   return b
@@ -701,18 +700,18 @@ Interpreter.prototype.stringComparison = function() {
   if(this.internalAccessible) {
     this.expect(Token.Internal);
     if(this.acceptedToken.value != "output") {
-      throw"Unknown internal string identifier: " + acceptedToken.value;
+      throw"Unknown internal string identifier: " + this.acceptedToken.value;
     }
     this.expect(Token.OpComparison);
     if(this.acceptedToken.value == "==") {
       this.expect(Token.StringLiteral);
-      a = this.state.output == acceptedToken.value
+      a = this.state.output == this.acceptedToken.value
     }else {
       if(this.acceptedToken.value == "!=") {
         this.expect(Token.StringLiteral);
-        a = this.state.output != acceptedToken.value
+        a = this.state.output != this.acceptedToken.value
       }else {
-        throw"Unknown string comparison operator: " + acceptedToken.value;
+        throw"Unknown string comparison operator: " + this.acceptedToken.value;
       }
     }
   }else {
@@ -729,7 +728,7 @@ Interpreter.prototype.boolExpression = function() {
       if(this.acceptedToken.value == "false") {
         a = false
       }else {
-        throw"Unknown boolean literal: " + acceptedToken.value;
+        throw"Unknown boolean literal: " + this.acceptedToken.value;
       }
     }
   }else {
@@ -781,7 +780,7 @@ Interpreter.prototype.condition = function() {
       if(this.acceptedToken.value == "||") {
         a = a || this.boolExpression()
       }else {
-        throw"Unknown boolean operator: " + acceptedToken.value;
+        throw"Unknown boolean operator: " + this.acceptedToken.value;
       }
     }
   }
@@ -799,7 +798,7 @@ Interpreter.prototype.assignment = function(a) {
         b = a - b
       }else {
         if(c != "=") {
-          throw"Unknown assignment operator: " + acceptedToken.value;
+          throw"Unknown assignment operator: " + this.acceptedToken.value;
         }
       }
     }
@@ -812,7 +811,7 @@ Interpreter.prototype.assignment = function(a) {
         if(this.acceptedToken.value == "--") {
           b--
         }else {
-          throw"Unknown increment operator: " + acceptedToken.value;
+          throw"Unknown increment operator: " + this.acceptedToken.value;
         }
       }
     }else {
@@ -866,8 +865,8 @@ Interpreter.prototype.statement = function() {
                 if(this.acceptedToken.value == "halt") {
                   this.state.halt()
                 }else {
-                  if(!acceptedToken.value.equals("nop")) {
-                    throw new InterpreterError("Unknown command: " + acceptedToken.value);
+                  if(this.acceptedToken.value != "nop") {
+                    throw new InterpreterError("Unknown command: " + this.acceptedToken.value);
                   }
                 }
               }
@@ -888,6 +887,103 @@ Interpreter.prototype.interpretCondition = function(a, b, c) {
 };
 Interpreter.prototype.interpretExpression = function(a, b, c) {
   return(new Interpreter(a, b, c)).intExpression()
+};
+function InterpretedProcessor(a) {
+  this.__proto__.__proto__.constructor();
+  this.updateDefinition(a)
+}
+InterpretedProcessor.prototype = new FetchIncExecProcessor;
+InterpretedProcessor.prototype.removeWhitespace = function(a) {
+  return a.replace(/\s/g, "")
+};
+InterpretedProcessor.prototype.trim = function(a) {
+  return a.replace(/^\s+|\s+$/g, "")
+};
+InterpretedProcessor.prototype.isTitleLine = function(a) {
+  return this.trim(a) != "" && this.trim(a).charAt(0) == "["
+};
+InterpretedProcessor.prototype.addLineToDict = function(a, b) {
+  if(this.trim(b) != "") {
+    var c = b.split(":"), d = this.trim(c[0]);
+    c = c.slice(1, c.length);
+    c = this.trim(c.join(":"));
+    a[d] = c
+  }
+};
+InterpretedProcessor.prototype.isDigit = function(a) {
+  return a >= "0" && a <= "9"
+};
+InterpretedProcessor.prototype.extractHeader = function(a) {
+  var b = [], c, d;
+  if(a.charAt(0) == Interpreter.instructionPartSeparator) {
+    a = a.substr(1, a.lenght)
+  }
+  for(d = c = 0;c != a.length && a.charAt(c) != Interpreter.instructionPartSeparator;) {
+    c++
+  }
+  b.push(a.substr(d, c) * 1);
+  c++;
+  for(d = c;c != a.length && this.isDigit(a.charAt(c));) {
+    c++
+  }
+  b.push(a.substring(d, c) * 1);
+  return b
+};
+InterpretedProcessor.prototype.extractCodeSection = function(a) {
+  var b;
+  for(b = 0;b != a.length;b++) {
+    if(a.charAt(b) == Interpreter.conditionTerminator || a.substr(b, b + Interpreter.guardKeyword.length) == Interpreter.guardKeyword) {
+      break
+    }
+  }
+  return a.substring(b, a.length)
+};
+InterpretedProcessor.prototype.addInstructionCode = function(a, b) {
+  var c, d, e, f;
+  e = this.extractHeader(a);
+  d = e[0];
+  c = d + "";
+  e = e[1];
+  f = this.extractCodeSection(a);
+  this.instructions[d] = new InterpretedInstruction(b[c], e, f)
+};
+InterpretedProcessor.prototype.updateDefinition = function(a) {
+  var b = {}, c = {};
+  this.instructions = [];
+  a = a.split("\n");
+  for(var d = 0;!this.isTitleLine(a[d]);) {
+    this.addLineToDict(b, a[d]);
+    d++
+  }
+  this.name = b.name;
+  this.memoryBitSize = b.memoryBitSize * 1;
+  this.numMemoryAddresses = b.numMemoryAddresses * 1;
+  this.registerBitSize = b.registerBitSize * 1;
+  var e = [];
+  b = b.registerNames.split(",");
+  for(var f in b) {
+    e.push(this.trim(b[f]))
+  }
+  this.setRegisterNames(e);
+  if(this.trim(a[d]) == "[descriptions]") {
+    for(d++;!this.isTitleLine(a[d]);) {
+      this.addLineToDict(c, a[d]);
+      d++
+    }
+  }else {
+    throw"Descriptions must be listed before instructions.";
+  }
+  if(this.trim(a[d]) == "[instructions]") {
+    d++;
+    f = a.slice(d, a.length).join();
+    f = this.removeWhitespace(f)
+  }else {
+    throw"No Instruction Set Defined";
+  }
+  f = f.split(".");
+  for(var g in f) {
+    f[g] != "" && this.addInstructionCode(f[g], c)
+  }
 };
 function Token(a, b) {
   this.type = a;
@@ -973,16 +1069,16 @@ Tokeniser.prototype.isDigit = function(a) {
   return a >= "0" && a <= "9"
 };
 Tokeniser.prototype.isHexDigit = function(a) {
-  return isDigit(a) || a >= "A" && a <= "F"
+  return this.isDigit(a) || a >= "A" && a <= "F"
 };
 Tokeniser.prototype.isLetter = function(a) {
   return a == "_" || a >= "a" && a <= "z" || a >= "A" && a <= "Z"
 };
 Tokeniser.prototype.isAlphanumeric = function(a) {
-  return isDigit(a) || isLetter(a)
+  return this.isDigit(a) || this.isLetter(a)
 };
 Tokeniser.prototype.tokeniseInteger = function() {
-  for(var a = "", b = this.position;b < this.code.length && isDigit(this.code.charAt(b));) {
+  for(var a = "", b = this.position;b < this.code.length && this.isDigit(this.code.charAt(b));) {
     a += this.code.charAt(b);
     b++
   }
@@ -991,7 +1087,7 @@ Tokeniser.prototype.tokeniseInteger = function() {
 Tokeniser.prototype.tokeniseHex = function() {
   var a = "";
   this.position++;
-  for(var b = this.position;b < this.code.length && isHexDigit(this.code.charAt(b));) {
+  for(var b = this.position;b < this.code.length && this.isHexDigit(this.code.charAt(b));) {
     a += this.code.charAt(b);
     b++
   }
@@ -1007,27 +1103,27 @@ Tokeniser.prototype.tokeniseStringLiteral = function() {
   this.position += 2
 };
 Tokeniser.prototype.tokeniseKeyword = function() {
-  for(var a = "", b = this.position;b < this.code.length && isAlphanumeric(this.code.charAt(b));) {
+  for(var a = "", b = this.position;b < this.code.length && this.isAlphanumeric(this.code.charAt(b));) {
     a += this.code.charAt(b);
     b++
   }
-  b = ["print", "printASCII", "bell", "halt", "nop"];
-  var c = ["numBellRings", "output", "numCycles"];
-  if(["true", "false", "otherwise"].contains(a)) {
+  b = {print:1, printASCII:2, bell:3, halt:4, nop:5};
+  var c = {numBellRings:1, output:2, numCycles:3};
+  if({"true":1, "false":2, otherwise:3}[a] != undefined) {
     this.addToken(Token.BoolLiteral, a)
   }else {
-    if(b.contains(a)) {
+    if(b[a] != undefined) {
       this.addToken(Token.Keyword, a)
     }else {
-      c.contains(a) ? this.addToken(Token.Internal, a) : this.addToken(Token.RegisterName, a)
+      c[a] != undefined ? this.addToken(Token.Internal, a) : this.addToken(Token.RegisterName, a)
     }
   }
 };
 Tokeniser.prototype.tokenise = function(a) {
   this.code = a;
-  tokens = [];
+  this.tokens = [];
   for(this.position = 0;this.position != this.code.length;) {
-    a = this.code.charAt(position);
+    a = this.code.charAt(this.position);
     switch(a) {
       case "(":
         this.addToken(Token.GroupOpen, a);
@@ -1089,10 +1185,63 @@ Tokeniser.prototype.tokenise = function(a) {
         if(this.isDigit(a)) {
           this.tokeniseInteger()
         }else {
-          isLetter(a) ? this.tokeniseKeyword() : this.throwError()
+          this.isLetter(a) ? this.tokeniseKeyword() : this.throwError()
         }
     }
   }
-  return tokens
+  return this.tokens
 };
+function dump() {
+  for(var a = app.processor.getRegisterNames(), b = 0;b < a.length;b++) {
+    console.log(a[b] + ": " + app.state.getRegister(a[b]))
+  }
+  a = app.state.memory;
+  for(b = 0;b < a.length;b++) {
+    console.log(b + ": " + a[b])
+  }
+}
+var app = new AppletRunner, stdin = process.openStdin(), memaddloc = 0;
+console.log("Welcome to the " + app.processor.name + " Emulator");
+console.log('enter "help" for more infomation');
+stdin.on("data", function(a) {
+  commands = ("" + a).replace("\n", "").split(" ");
+  if(commands.length > 0) {
+    if(commands[0] == commands[0] * 1) {
+      for(a = 0;a < commands.length;a++) {
+        if(commands[a] == commands[a] * 1) {
+          app.setMemory(memaddloc, commands[a] * 1);
+          memaddloc++
+        }
+      }
+    }else {
+      if(commands[0] == "run") {
+        a = 1E3;
+        if(commands.length > 1 && commands[1] * 1 > 0) {
+          a = commands[1] * 1
+        }
+        app.run(a)
+      }else {
+        if(commands[0] == "dump") {
+          dump()
+        }else {
+          if(commands[0] == "step") {
+            app.step()
+          }else {
+            if(commands[0] == "help") {
+              console.log("Commands: dump, step, run, <number>");
+              console.log("dump: Prints out all memory");
+              console.log("step: The microcontroler goes fored through one part of the cycle. 3 steps is required to run one instruction");
+              console.log("run <x>: Steps x times. is no x, steps 1000 times");
+              console.log("<number> sets the memory cells to the numbers")
+            }else {
+              console.log('Command "' + commands[0] + '" Not Found!!!')
+            }
+          }
+        }
+      }
+    }
+  }
+  app.state.isHalted && console.log("HALTED.")
+});
 
+//done. 

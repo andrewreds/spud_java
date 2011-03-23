@@ -1,5 +1,26 @@
-var stdin = process.openStdin();
+function dump () {
+	var regnames = app.processor.getRegisterNames ();
+	for (var i=0; i<regnames.length; i++) {
+		console.log (regnames[i]+": "+app.state.getRegister (regnames[i]));
+	}
+	var memory = app.state.memory;
+	for (var i=0; i<memory.length; i++) {
+		console.log (i+": "+memory[i]);
+	}
+}
+
+/*var app = new AppletRunner ( );
+app.setMemory (0,1);
+
+app.step();
+app.step();
+app.step();
+
+dump();
+alert ("Cool :) "+JSON.stringify(app.state));*/
+
 var app = new AppletRunner ( );
+var stdin = process.openStdin();
 var memaddloc = 0;
 console.log ("Welcome to the " + app.processor.name + " Emulator");
 console.log ("enter \"help\" for more infomation");
@@ -37,14 +58,3 @@ stdin.on('data', function(chunk) {
 	}
 	if (app.state.isHalted) console.log ("HALTED.");
 }) 
-
-function dump () {
-	var regnames = app.processor.getRegisterNames ();
-	for (var i=0; i<regnames.length; i++) {
-		console.log (regnames[i]+": "+app.state.getRegister (regnames[i]));
-	}
-	var memory = app.state.memory;
-	for (var i=0; i<memory.length; i++) {
-		console.log (i+": "+memory[i]);
-	}
-}
